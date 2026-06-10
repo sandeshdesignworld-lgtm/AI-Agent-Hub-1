@@ -1,0 +1,1 @@
+- [connect-pg-simple esbuild session fix](connect-pg-session.md) — never use `createTableIfMissing: true` with esbuild; create the session table via a separate migration instead.
