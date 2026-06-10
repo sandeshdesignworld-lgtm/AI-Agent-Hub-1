@@ -15,7 +15,7 @@ tags:
   - name: auth
     description: Authentication operations
 paths:
-  /healthz:
+  /health:
     get:
       operationId: healthCheck
       tags: [health]
