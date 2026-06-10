@@ -45,7 +45,13 @@ app.use(
       tableName: "session",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
+    secret: (() => {
+      const s = process.env.SESSION_SECRET;
+      if (!s && process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET must be set in production");
+      }
+      return s || "dev-secret-change-in-production";
+    })(),
     resave: false,
     saveUninitialized: false,
     cookie: {

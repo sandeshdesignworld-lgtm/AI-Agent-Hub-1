@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useGetAuthMe, useListAgents, useAdminLogout, getGetAuthMeQueryKey } from "@workspace/api-client-react";
+import { useGetAuthMe, useListAgents, useAdminLogout, getGetAuthMeQueryKey, getListAgentsQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,11 +11,11 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { data: user, isLoading: authLoading, error: authError } = useGetAuthMe({
-    query: { retry: false }
+    query: { queryKey: getGetAuthMeQueryKey(), retry: false }
   });
 
   const { data: agents, isLoading: agentsLoading } = useListAgents({
-    query: { enabled: !!user }
+    query: { queryKey: getListAgentsQueryKey(), enabled: !!user }
   });
 
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
               {user.username}
             </div>
             <button
-              onClick={() => logoutMutation.mutate({})}
+              onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-card"
               data-testid="button-logout"

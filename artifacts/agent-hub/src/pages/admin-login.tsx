@@ -43,7 +43,7 @@ export default function AdminLogin() {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: error.error || "Invalid credentials",
+          description: (error.data as { error?: string } | null)?.error || "Invalid credentials",
         });
       }
     });

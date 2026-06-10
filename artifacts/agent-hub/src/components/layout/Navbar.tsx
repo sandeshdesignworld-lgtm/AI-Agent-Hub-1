@@ -6,9 +6,7 @@ import { getGetAuthMeQueryKey } from "@workspace/api-client-react";
 import { Zap, LogOut } from "lucide-react";
 
 export function Navbar() {
-  const { data: user } = useGetAuthMe({
-    query: { retry: false }
-  });
+  const { data: user } = useGetAuthMe();
   const logout = useAdminLogout();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
