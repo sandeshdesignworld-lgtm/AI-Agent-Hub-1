@@ -1,0 +1,923 @@
+Create a modern web application UI called **AgentHub**.
+
+The purpose of this web app is **not to sell or promote AI agents**. It is a clean, futuristic **AI Agent Showcase Hub** where users can browse and view the AI agents that have been developed so far. The landing page should feel like a technical command center or project showcase, where each agent is presented as part of a growing internal portfolio.
+
+The design should be futuristic, sleek, minimal, and professional. It should feel like a tech startup dashboard mixed with an AI research/product showcase. Avoid marketing-heavy language, sales copy, lead-generation forms, pricing sections, testimonials, or promotional CTAs.
+
+There should be no contact form, no newsletter signup, no “Get Started” sales CTA, and no conversion-focused section.
+
+The main goal is:
+
+1. Show the list of AI agents developed so far.
+2. Allow users to open each agent’s dedicated detail page.
+3. Allow an admin to log in and access an internal dashboard.
+4. On the admin dashboard, show a sidebar list of agents.
+5. When an admin clicks an agent, open its respective playarea.
+6. For now, each admin playarea should show a clean “Coming Soon” placeholder.
+
+Use a dark futuristic theme with a command-center feel.
+
+Overall visual direction:
+
+* Dark navy / near-black background
+* Subtle grid pattern background
+* Cyan and blue accent colors
+* Glassmorphism cards
+* Thin glowing borders
+* Futuristic line icons
+* Smooth hover effects
+* Clean typography
+* Spacious layout
+* Premium but not overly flashy
+* Technical, organized, and portfolio-like
+
+Suggested color palette:
+
+* Background: #050816 or #030712
+* Surface/Card: rgba(255,255,255,0.04)
+* Card Border: rgba(255,255,255,0.08)
+* Primary Accent: #22D3EE
+* Secondary Accent: #38BDF8
+* Blue Accent: #3B82F6
+* Text Primary: #F8FAFC
+* Text Secondary: #94A3B8
+* Muted Text: #64748B
+* Success/Online: #22C55E
+* Warning/Coming Soon: #FACC15
+
+Typography:
+Use a modern SaaS/tech font such as Inter, Sora, Space Grotesk, or Manrope.
+Headings should be bold and clean.
+Body text should be readable and calm.
+Avoid overly decorative fonts.
+
+Application name:
+AgentHub
+
+Logo idea:
+Use a simple futuristic lightning, node, circuit, chip, or spark icon followed by the word:
+AGENTHUB
+Make “AGENT” white or light gray and “HUB” cyan.
+
+Navigation bar:
+Create a fixed or sticky top navbar.
+Navbar should include:
+
+* Left: AgentHub logo
+* Right: Admin Login button
+
+Do not include unnecessary nav links unless needed.
+Keep the navbar minimal.
+
+Landing Page Structure:
+
+1. Hero Section
+
+The hero section should clearly explain that this is an AI agent showcase hub.
+
+Use a small status badge above the headline:
+“AGENT HUB ONLINE”
+or
+“SYSTEM ONLINE”
+or
+“AI AGENT SHOWCASE”
+
+Hero headline:
+“AI Agent Hub for Showcasing Intelligent Workflows”
+
+Alternative headline:
+“Explore a Growing Collection of AI Agents”
+
+Hero subheading:
+“A centralized showcase of AI agents developed for finance, HR, support, scheduling, healthcare, education, productivity, and automation workflows.”
+
+Important tone:
+Do not make it sound like a sales website. Make it sound like a professional showcase of completed and upcoming AI agent work.
+
+Below the hero text, show small technical badges:
+
+* Agent Library
+* Secure Admin Access
+* Workflow Playareas
+* Project Showcase
+
+Do not use large promotional CTA buttons in the hero.
+No form submission.
+No lead capture.
+
+Optional hero visual:
+Add a futuristic dashboard preview or abstract network of connected agent nodes.
+The visual can show small floating cards:
+
+* Expense Tracker
+* HR Agent
+* Customer Support
+* Voice Agent
+* Deadline Tracker
+
+The hero should not take too much vertical space. It should be visually impressive but still allow users to quickly reach the agent list.
+
+2. Overview / Purpose Section
+
+Add a small section after the hero explaining what AgentHub is.
+
+Section title:
+“What is AgentHub?”
+
+Content:
+“AgentHub is a centralized showcase platform for displaying AI agents developed across different domains. Each agent has a dedicated page containing its overview, working flow, requirements, expected outputs, and sample examples. Admin users can access a private dashboard where agent playareas will be available.”
+
+Use 3 small info cards:
+Card 1:
+Title: “Showcase Agents”
+Description: “Display developed and upcoming AI agents in a structured, browsable interface.”
+
+Card 2:
+Title: “Document Capabilities”
+Description: “Each agent includes details such as purpose, workflow, required inputs, outputs, and examples.”
+
+Card 3:
+Title: “Admin Playareas”
+Description: “Admins can access a secure dashboard where each agent will eventually have its own workspace.”
+
+3. Agent Library Section
+
+This is the main section of the landing page.
+
+Section title:
+“Agent Library”
+
+Section subtitle:
+“A structured list of AI agents developed so far, organized by use case and domain.”
+
+Display the agents in a responsive card grid.
+Use 2 columns on desktop, 1 column on mobile.
+Cards should look futuristic and technical.
+
+Each card should include:
+
+* Agent ID
+* Agent name
+* Category badge
+* Status badge
+* Short description
+* Capability tags
+* A text link or button: “View Details”
+
+The “View Details” interaction should open the agent detail page using a route like:
+/agent/expense-tracker
+
+This is not a sales CTA. It is simply navigation to the documentation/detail page.
+
+Agent cards:
+
+Agent 001:
+Name: Expense Tracker
+Slug: expense-tracker
+Category: Finance
+Status: Details Available
+Short description:
+“An AI-powered agent designed to categorize, analyze, and summarize expenses from user-provided financial data.”
+Capability tags:
+Expense Categorization, Spending Summary, Reports, Insights
+
+Agent 002:
+Name: Deadline Tracker
+Slug: deadline-tracker
+Category: Productivity
+Status: Details Available
+Short description:
+“An agent that helps monitor tasks, deadlines, priorities, and upcoming due dates in a structured format.”
+Capability tags:
+Task Tracking, Reminders, Priority Mapping, Deadline Insights
+
+Agent 003:
+Name: HR Agent
+Slug: hr-agent
+Category: HR
+Status: Details Available
+Short description:
+“An AI assistant designed to support HR workflows such as onboarding, employee queries, candidate screening, and documentation.”
+Capability tags:
+Onboarding, HR Q&A, Recruitment, Documentation
+
+Agent 004:
+Name: Appointment Booking
+Slug: appointment-booking
+Category: Scheduling
+Status: Details Available
+Short description:
+“An intelligent scheduling agent for managing appointment requests, availability checks, confirmations, and rescheduling.”
+Capability tags:
+Scheduling, Availability, Booking, Reminders
+
+Agent 005:
+Name: Customer Support
+Slug: customer-support
+Category: Support
+Status: Details Available
+Short description:
+“An AI support agent designed to respond to common queries, summarize tickets, escalate issues, and assist support teams.”
+Capability tags:
+FAQ Handling, Ticket Support, Escalation, Summaries
+
+Agent 006:
+Name: Campus Concierge Agent
+Slug: campus-concierge-agent
+Category: Education
+Status: Details Available
+Short description:
+“An AI concierge agent for helping students, visitors, and staff access campus-related information and services.”
+Capability tags:
+Campus Info, Navigation, Student Help, Events
+
+Agent 007:
+Name: Hospital Receptionist Voice Agent
+Slug: hospital-receptionist-voice-agent
+Category: Healthcare / Voice
+Status: Details Available
+Short description:
+“A voice-enabled receptionist agent designed to assist with patient queries, appointment routing, and hospital front-desk workflows.”
+Capability tags:
+Voice Support, Patient Queries, Appointment Routing, Reception Desk
+
+Agent 008:
+Name: LinkedIn Management Multi Agent
+Slug: linkedin-management-multi-agent
+Category: Multi-Agent / Social
+Status: Details Available
+Short description:
+“A multi-agent workflow designed to support LinkedIn content planning, profile optimization, outreach, and engagement management.”
+Capability tags:
+Content Planning, Profile Optimization, Outreach, Engagement
+
+Card design:
+
+* Dark glass card
+* Thin border
+* Slight cyan glow on hover
+* Agent ID in small monospace text
+* Category badge in muted style
+* Status badge in cyan or green
+* Capability tags as small pills
+* “View Details” as a simple full-width outlined or filled button
+* Hover should slightly lift the card and brighten border
+
+4. Optional Filter Bar
+
+Above the agent grid, add simple filter chips:
+
+* All
+* Finance
+* Productivity
+* HR
+* Scheduling
+* Support
+* Education
+* Healthcare
+* Voice
+* Multi-Agent
+
+Filters can be UI-only for now if functionality is not implemented.
+Keep the design subtle.
+
+5. Agent Detail Page Template
+
+Each agent card should route to a dedicated detail page.
+
+Route examples:
+
+* /agent/expense-tracker
+* /agent/deadline-tracker
+* /agent/hr-agent
+* /agent/appointment-booking
+* /agent/customer-support
+* /agent/campus-concierge-agent
+* /agent/hospital-receptionist-voice-agent
+* /agent/linkedin-management-multi-agent
+
+Each detail page should use the same layout.
+
+Agent Detail Page sections:
+
+A. Page Header
+Include:
+
+* Back to Agent Library link
+* Agent category badge
+* Agent status badge
+* Agent name
+* Short description
+* Agent ID
+
+Example:
+“Expense Tracker”
+“An AI-powered agent designed to categorize, analyze, and summarize expenses from user-provided financial data.”
+
+B. Overview
+Explain what the agent does.
+
+C. Purpose
+Explain why the agent exists and what workflow it supports.
+
+D. How It Works
+Show a step-by-step workflow.
+Example:
+
+1. User provides the required input.
+2. Agent processes and structures the information.
+3. Agent applies domain-specific reasoning.
+4. Agent generates a useful output.
+5. User reviews or exports the result.
+
+E. Required Inputs
+Show what information the agent needs from the user.
+
+F. Expected Output
+Show what the agent produces.
+
+G. Sample Example
+Show one sample input and one sample output.
+
+H. Current Status
+Show:
+“Details page available. Admin playarea coming soon.”
+
+I. Future Scope
+Mention possible future improvements for the agent.
+
+Use a documentation-style layout.
+The page should feel like an internal product note, technical showcase, or portfolio documentation page.
+
+6. Agent Detail Content
+
+Create initial content for all agents.
+
+Expense Tracker detail content:
+Overview:
+“The Expense Tracker Agent helps organize financial entries by identifying expense categories, summarizing spending, and generating insights from raw expense data.”
+
+Purpose:
+“To simplify expense review and reporting by converting unstructured or semi-structured spending information into categorized summaries.”
+
+How it works:
+
+1. User provides expense entries.
+2. Agent extracts amount, date, vendor, and description.
+3. Agent categorizes each expense.
+4. Agent calculates totals by category.
+5. Agent generates a summary and insights.
+
+Required inputs:
+
+* Expense amount
+* Date
+* Vendor or merchant
+* Description
+* Payment method
+* Optional notes or receipt text
+
+Expected output:
+
+* Categorized expense list
+* Total spending summary
+* Category-wise breakdown
+* Spending insights
+* Export-ready report structure
+
+Sample input:
+“I spent ₹2,500 on office supplies, ₹1,200 on travel, and ₹800 on lunch meetings this week.”
+
+Sample output:
+“Total Expense: ₹4,500. Categories: Office Supplies ₹2,500, Travel ₹1,200, Meals ₹800. Insight: Office supplies account for the highest spending this week.”
+
+Deadline Tracker detail content:
+Overview:
+“The Deadline Tracker Agent helps organize tasks, deadlines, priorities, and upcoming due dates.”
+
+Purpose:
+“To reduce missed deadlines by converting tasks into a clear priority and timeline structure.”
+
+How it works:
+
+1. User provides tasks and due dates.
+2. Agent extracts deadlines and priority signals.
+3. Agent organizes tasks by urgency.
+4. Agent suggests reminders or priority order.
+5. Agent generates a deadline summary.
+
+Required inputs:
+
+* Task title
+* Due date
+* Priority level
+* Project name
+* Optional notes
+
+Expected output:
+
+* Sorted deadline list
+* Urgency level
+* Upcoming task summary
+* Suggested priority order
+* Reminder-ready structure
+
+Sample input:
+“Submit project proposal by Friday, prepare report by tomorrow, and schedule review meeting next Monday.”
+
+Sample output:
+“Highest priority: Prepare report by tomorrow. Upcoming: Submit project proposal by Friday. Later: Schedule review meeting next Monday.”
+
+HR Agent detail content:
+Overview:
+“The HR Agent supports human-resource workflows including onboarding, employee queries, candidate screening, and HR documentation.”
+
+Purpose:
+“To assist HR teams by automating repetitive employee support and recruitment-related tasks.”
+
+How it works:
+
+1. User provides HR query, resume, employee request, or policy document.
+2. Agent identifies the HR task type.
+3. Agent extracts relevant information.
+4. Agent generates a response, summary, checklist, or recommendation.
+5. HR team reviews the output.
+
+Required inputs:
+
+* Employee query
+* Resume or candidate information
+* HR policy text
+* Job description
+* Onboarding requirements
+
+Expected output:
+
+* Candidate summary
+* HR query response
+* Onboarding checklist
+* Policy explanation
+* Interview preparation notes
+
+Sample input:
+“Create an onboarding checklist for a new software developer joining next Monday.”
+
+Sample output:
+“Onboarding checklist: account setup, laptop allocation, team introduction, HR documentation, project access, first-week training schedule.”
+
+Appointment Booking detail content:
+Overview:
+“The Appointment Booking Agent helps manage scheduling workflows including booking, rescheduling, availability checks, and reminders.”
+
+Purpose:
+“To simplify appointment coordination by turning user requests into structured booking actions.”
+
+How it works:
+
+1. User provides appointment request.
+2. Agent checks requested date, time, and service type.
+3. Agent identifies missing information.
+4. Agent prepares booking confirmation or rescheduling options.
+5. Agent generates appointment summary.
+
+Required inputs:
+
+* Name
+* Date
+* Time
+* Service or meeting type
+* Contact details
+* Optional notes
+
+Expected output:
+
+* Appointment confirmation
+* Rescheduling options
+* Calendar-ready summary
+* Reminder message
+* Missing information request
+
+Sample input:
+“Book an appointment with Dr. Sharma for next Monday morning.”
+
+Sample output:
+“Appointment request prepared for Dr. Sharma next Monday morning. Required missing detail: preferred exact time and patient contact number.”
+
+Customer Support detail content:
+Overview:
+“The Customer Support Agent assists with answering customer queries, summarizing issues, escalating tickets, and organizing support workflows.”
+
+Purpose:
+“To improve response consistency and help support teams handle repetitive queries faster.”
+
+How it works:
+
+1. User provides customer query or ticket.
+2. Agent detects intent and issue category.
+3. Agent searches for suitable response structure.
+4. Agent generates a helpful reply or escalation note.
+5. Agent summarizes the issue for support records.
+
+Required inputs:
+
+* Customer message
+* Issue category
+* Order or account details if applicable
+* Support policy
+* Previous conversation if available
+
+Expected output:
+
+* Suggested customer response
+* Ticket summary
+* Issue category
+* Escalation recommendation
+* Resolution steps
+
+Sample input:
+“My order has not arrived yet and the tracking link is not working.”
+
+Sample output:
+“Issue category: Delivery / Tracking. Suggested response: Apologize, request order ID, confirm tracking issue, and escalate to logistics if required.”
+
+Campus Concierge Agent detail content:
+Overview:
+“The Campus Concierge Agent helps students, visitors, and staff find campus information, services, events, schedules, and navigation guidance.”
+
+Purpose:
+“To provide a single AI assistant for campus-related support and information discovery.”
+
+How it works:
+
+1. User asks a campus-related question.
+2. Agent identifies the topic such as location, schedule, service, event, or department.
+3. Agent retrieves or structures the relevant information.
+4. Agent provides clear guidance or next steps.
+5. Agent can suggest related campus resources.
+
+Required inputs:
+
+* User query
+* Campus location or department
+* Event or service name
+* Date or schedule if applicable
+* User type such as student, visitor, or staff
+
+Expected output:
+
+* Campus guidance
+* Service information
+* Location directions
+* Event details
+* Suggested next steps
+
+Sample input:
+“Where can I get my student ID card and what documents do I need?”
+
+Sample output:
+“Visit the student services office. Required documents may include admission proof, identity document, and recent photo. Please check office hours before visiting.”
+
+Hospital Receptionist Voice Agent detail content:
+Overview:
+“The Hospital Receptionist Voice Agent is a voice-focused AI agent designed to handle front-desk hospital interactions such as patient queries, appointment routing, and department information.”
+
+Purpose:
+“To support hospital reception workflows by assisting patients with common questions and routing requests efficiently.”
+
+How it works:
+
+1. Patient asks a question through voice or text.
+2. Agent identifies the request type.
+3. Agent gathers missing information if required.
+4. Agent routes the request to appointment, department, emergency, or general information.
+5. Agent provides a clear response or next step.
+
+Required inputs:
+
+* Patient name
+* Query or request
+* Department or doctor name
+* Preferred appointment time
+* Contact number
+* Urgency level if relevant
+
+Expected output:
+
+* Reception-style response
+* Appointment routing
+* Department guidance
+* Missing information request
+* Escalation flag for urgent cases
+
+Sample input:
+“I want to book an appointment with a cardiologist tomorrow.”
+
+Sample output:
+“Appointment request identified for Cardiology. Required details: preferred time, patient name, contact number, and whether this is a new or follow-up visit.”
+
+LinkedIn Management Multi Agent detail content:
+Overview:
+“The LinkedIn Management Multi Agent supports LinkedIn-related workflows such as content planning, profile optimization, outreach drafting, and engagement management.”
+
+Purpose:
+“To organize LinkedIn growth and management tasks using multiple specialized agents working across content, profile, outreach, and engagement.”
+
+How it works:
+
+1. User provides LinkedIn goal or task.
+2. Agent identifies whether the task is content, profile, outreach, or engagement related.
+3. Specialized sub-agents handle different parts of the workflow.
+4. Agent generates drafts, recommendations, or content plans.
+5. User reviews and finalizes the output.
+
+Required inputs:
+
+* LinkedIn profile goal
+* Target audience
+* Topic or industry
+* Existing profile content
+* Outreach objective
+* Content preferences
+
+Expected output:
+
+* Content ideas
+* Post drafts
+* Profile improvement suggestions
+* Outreach message drafts
+* Engagement plan
+
+Sample input:
+“Create a weekly LinkedIn content plan for an AI automation consultant.”
+
+Sample output:
+“Weekly content plan: Monday educational post, Wednesday case-study post, Friday personal insight post, Sunday engagement and comment strategy.”
+
+7. Admin Login Page
+
+Create a separate admin login page at:
+/admin/login
+
+Design:
+
+* Centered login card
+* Dark futuristic glassmorphism style
+* AgentHub logo at top
+* Username field
+* Password field
+* Login button
+* Small helper text: “Admin access only”
+* No signup option
+* No forgot password link unless required
+* No public registration
+
+Backend requirement:
+Admin authentication should be username + password based.
+Passwords must be stored as hashed passwords, not plain text.
+
+8. Admin Dashboard
+
+Create admin dashboard route:
+/admin/dashboard
+
+Layout:
+
+* Left sidebar
+* Main content area
+* Top header
+
+Sidebar:
+
+* AgentHub logo
+* Dashboard
+* Expense Tracker
+* Deadline Tracker
+* HR Agent
+* Appointment Booking
+* Customer Support
+* Campus Concierge Agent
+* Hospital Receptionist Voice Agent
+* LinkedIn Management Multi Agent
+* Settings
+* Logout
+
+Main dashboard default screen:
+Title:
+“Admin Command Center”
+
+Description:
+“Select an agent from the sidebar to open its playarea.”
+
+Show summary cards:
+
+* Total Agents: 8
+* Active Detail Pages: 8
+* Playareas: Coming Soon
+* Admin Access: Enabled
+
+When admin clicks an agent in the sidebar:
+Open a playarea placeholder page.
+
+Playarea layout:
+
+* Agent name
+* Category
+* Status: Coming Soon
+* Short description
+* Placeholder panel with message:
+  “This agent playarea is currently under development.”
+* Future modules listed as disabled cards:
+
+  * Prompt Console
+  * File Upload
+  * Agent Configuration
+  * Execution Logs
+  * Output Preview
+  * Usage History
+
+Example playarea title:
+“Expense Tracker Playarea”
+
+Placeholder text:
+“The Expense Tracker admin playarea will allow admins to test prompts, upload expense data, configure agent behavior, and review generated outputs. This module is coming soon.”
+
+9. Backend Data Requirements
+
+Create backend structure for storing admin users and agents.
+
+Admin User model:
+
+* id
+* username
+* password_hash
+* role
+* is_active
+* created_at
+* updated_at
+* last_login_at
+
+Agent model:
+
+* id
+* name
+* slug
+* category
+* status
+* short_description
+* overview
+* purpose
+* how_it_works
+* required_inputs
+* expected_output
+* sample_input
+* sample_output
+* future_scope
+* created_at
+* updated_at
+
+Admin Activity Log model:
+
+* id
+* admin_id
+* action
+* agent_id
+* metadata
+* created_at
+
+Future Agent Playarea Config model:
+
+* id
+* agent_id
+* admin_id
+* system_prompt
+* model_provider
+* api_key_reference
+* temperature
+* max_tokens
+* status
+* created_at
+* updated_at
+
+10. UI Details
+
+Landing page should include:
+
+* Minimal navbar
+* Hero section
+* Purpose section
+* Agent library grid
+* Optional filters
+* Footer
+
+Landing page should not include:
+
+* Sales CTA
+* Pricing
+* Testimonials
+* Contact form
+* Newsletter form
+* Lead capture
+* “Book a demo”
+* “Start free trial”
+* Promotional statistics
+
+Footer should be simple:
+Left:
+“AgentHub”
+“A centralized showcase of AI agents and workflow experiments.”
+
+Links:
+
+* Agent Library
+* Admin Login
+
+Footer bottom:
+“© 2026 AgentHub. All rights reserved.”
+
+11. Responsive Requirements
+
+Desktop:
+
+* Two-column agent grid
+* Sidebar dashboard layout
+* Large hero typography
+
+Tablet:
+
+* Two-column or one-column cards depending on width
+* Navbar remains simple
+
+Mobile:
+
+* Single-column layout
+* Cards stack vertically
+* Admin sidebar becomes drawer or collapsible menu
+* Hero text scales down
+* Avoid horizontal scrolling
+
+12. Interaction Requirements
+
+Landing page:
+
+* Clicking an agent card or “View Details” opens the agent detail page.
+* Hover effect on cards.
+* Filter chips can filter cards by category if implemented.
+* Admin Login button opens /admin/login.
+
+Agent detail page:
+
+* Back link returns to landing page or agent library.
+* Content should be structured and readable.
+* Use cards, sections, and code-style sample input/output blocks.
+
+Admin:
+
+* Login authenticates admin.
+* After login, redirect to /admin/dashboard.
+* Sidebar agent click updates main content.
+* Logout clears session and redirects to /admin/login.
+
+13. Tone and Writing Style
+
+Use clear, technical, documentation-style language.
+Avoid exaggerated claims.
+Avoid sales language.
+Avoid phrases like:
+
+* “Transform your business”
+* “Boost your revenue”
+* “Start your journey”
+* “Get started today”
+* “Unlock the power”
+* “Revolutionize your workflow”
+
+Prefer language like:
+
+* “Agent overview”
+* “Workflow”
+* “Required inputs”
+* “Expected output”
+* “Current status”
+* “Future scope”
+* “Playarea coming soon”
+* “Agent documentation”
+* “Showcase”
+* “Internal dashboard”
+
+14. Final Design Feeling
+
+The final website should feel like:
+
+* A futuristic AI command center
+* A developer/product showcase
+* A structured agent documentation hub
+* A clean internal portfolio of AI agent work
+
+It should not feel like:
+
+* A SaaS sales landing page
+* A marketing funnel
+* A startup pitch page
+* A lead generation website
+
+Build the UI with strong visual polish, but keep the content focused on showcasing the agents and documenting their capabilities.
