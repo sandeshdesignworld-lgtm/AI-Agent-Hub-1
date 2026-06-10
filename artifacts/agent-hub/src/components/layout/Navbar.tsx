@@ -14,7 +14,7 @@ export function Navbar() {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+        queryClient.removeQueries({ queryKey: getGetAuthMeQueryKey() });
         setLocation("/admin/login");
       }
     });

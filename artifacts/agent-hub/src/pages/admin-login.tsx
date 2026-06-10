@@ -79,7 +79,7 @@ export default function AdminLogin() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono text-xs uppercase text-muted-foreground">Operator ID</FormLabel>
+                    <FormLabel className="font-mono text-xs uppercase text-muted-foreground">Operator</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
