@@ -1,5 +1,5 @@
 import { useListAgents } from "@workspace/api-client-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Terminal, ArrowRight, Zap, Shield, Cpu } from "lucide-react";
 
 export default function Home() {
   const { data: agents, isLoading, error } = useListAgents();
+  const [, navigate] = useLocation();
 
   return (
     <div className="flex-1 w-full pb-20">
@@ -70,7 +71,10 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
-                <Card className="h-full flex flex-col border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/50 transition-colors group relative overflow-hidden">
+                <Card
+                  className="h-full flex flex-col border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/50 transition-colors group relative overflow-hidden cursor-pointer"
+                  onClick={() => navigate(`/agent/${agent.slug}`)}
+                >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <CardHeader className="flex-1">
                     <CardTitle className="font-display text-xl mb-2 group-hover:text-primary transition-colors flex justify-between items-center">
@@ -82,11 +86,13 @@ export default function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardFooter>
-                    <Link href={`/agent/${agent.slug}`} className="w-full">
-                      <Button className="w-full group/btn variant-outline border-primary/20 hover:bg-primary/10 hover:text-primary" data-testid={`button-explore-${agent.slug}`}>
-                        Explore Capabilities <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                      </Button>
-                    </Link>
+                    <Button
+                      className="w-full group/btn variant-outline border-primary/20 hover:bg-primary/10 hover:text-primary"
+                      data-testid={`button-explore-${agent.slug}`}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/agent/${agent.slug}`); }}
+                    >
+                      Explore Capabilities <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>
