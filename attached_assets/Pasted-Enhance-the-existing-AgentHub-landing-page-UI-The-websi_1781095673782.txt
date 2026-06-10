@@ -1,0 +1,257 @@
+Enhance the existing AgentHub landing page UI.
+
+The website is not a sales or promotional landing page. It is an AI Agent Showcase Hub where users can browse the AI agents developed so far and open dedicated detail pages for each agent.
+
+Keep the current futuristic dark command-center theme, but make the page feel more polished, structured, and portfolio-like.
+
+Current visual style to preserve:
+
+* Dark futuristic background
+* Subtle grid pattern
+* Cyan/blue accent color
+* AgentHub logo in the navbar
+* Admin Login button
+* Large hero section
+* Agent cards in a responsive grid
+* Sleek, technical, modern UI
+
+Improve the landing page with the following changes:
+
+1. Hero Section
+
+Replace the current vague headline with a clearer showcase-focused headline.
+
+Use headline:
+“AI Agent Hub for Intelligent Workflow Showcases”
+
+Use subheading:
+“A centralized showcase of AI agents developed for finance, HR, support, scheduling, healthcare, education, productivity, and automation workflows.”
+
+Keep a small futuristic status badge above the headline:
+“AGENT HUB ONLINE”
+
+Replace the current badges with more relevant labels:
+
+* Agent Library
+* Secure Admin Access
+* Workflow Playareas
+* Project Showcase
+
+Do not add sales CTA buttons like “Get Started”, “Book Demo”, “Start Free Trial”, or “Contact Us”.
+
+The hero should feel premium but not overly tall. Reduce excessive vertical spacing so users can reach the agent library sooner.
+
+2. Add a Short Purpose Section
+
+Add a section below the hero titled:
+“What is AgentHub?”
+
+Content:
+“AgentHub is a centralized platform for showcasing AI agents developed across different domains. Each agent has a dedicated detail page containing its overview, workflow, requirements, expected outputs, and sample examples. Admin users can access a private dashboard where agent playareas will be available.”
+
+Add three compact info cards:
+
+* Showcase Agents
+  “Display developed and upcoming AI agents in a structured, browsable interface.”
+
+* Document Capabilities
+  “Each agent includes purpose, workflow, required inputs, outputs, and examples.”
+
+* Admin Playareas
+  “Admins can access a secure dashboard where each agent will eventually have its own workspace.”
+
+3. Rename Active Agents Section
+
+Rename:
+“ACTIVE AGENTS”
+
+To:
+“Agent Library”
+
+Add subtitle:
+“A structured list of AI agents developed so far, organized by use case and domain.”
+
+4. Improve Agent Cards
+
+Make each agent card more informative and visually distinct.
+
+Each card should include:
+
+* Agent ID
+* Agent name
+* Category badge
+* Status badge
+* Short description
+* Capability tags
+* View Details button
+
+Use the button label:
+“View Details”
+
+The button should route to the respective detail page:
+
+* /agent/expense-tracker
+* /agent/deadline-tracker
+* /agent/hr-agent
+* /agent/appointment-booking
+* /agent/customer-support
+* /agent/campus-concierge-agent
+* /agent/hospital-receptionist-voice-agent
+* /agent/linkedin-management-multi-agent
+
+Do not make the cards sound promotional. Keep the tone documentation-style and showcase-focused.
+
+5. Agent Card Data
+
+Use the following card content:
+
+Agent 001:
+Name: Expense Tracker
+Category: Finance
+Status: Details Available
+Description: “Categorizes, analyzes, and summarizes expense data using AI-powered financial insights.”
+Tags: Expense Categorization, Spending Summary, Reports
+
+Agent 002:
+Name: Deadline Tracker
+Category: Productivity
+Status: Details Available
+Description: “Organizes tasks, deadlines, priorities, and upcoming due dates into a clear workflow view.”
+Tags: Task Tracking, Priority Mapping, Deadlines
+
+Agent 003:
+Name: HR Agent
+Category: HR
+Status: Details Available
+Description: “Supports HR workflows including onboarding, employee queries, recruitment, and documentation.”
+Tags: Onboarding, HR Q&A, Recruitment
+
+Agent 004:
+Name: Appointment Booking
+Category: Scheduling
+Status: Details Available
+Description: “Manages appointment requests, availability checks, confirmations, and rescheduling workflows.”
+Tags: Scheduling, Availability, Booking
+
+Agent 005:
+Name: Customer Support
+Category: Support
+Status: Details Available
+Description: “Assists with customer queries, ticket summaries, escalation notes, and support responses.”
+Tags: FAQ, Tickets, Escalation
+
+Agent 006:
+Name: Campus Concierge Agent
+Category: Education
+Status: Details Available
+Description: “Helps students, visitors, and staff access campus information, services, and navigation guidance.”
+Tags: Campus Info, Student Help, Navigation
+
+Agent 007:
+Name: Hospital Receptionist Voice Agent
+Category: Healthcare / Voice
+Status: Details Available
+Description: “Supports front-desk hospital workflows such as patient queries, appointment routing, and department guidance.”
+Tags: Voice Support, Patient Queries, Reception
+
+Agent 008:
+Name: LinkedIn Management Multi Agent
+Category: Multi-Agent / Social
+Status: Details Available
+Description: “Supports LinkedIn workflows including content planning, profile optimization, outreach, and engagement.”
+Tags: Content Planning, Profile Optimization, Outreach
+
+6. Add Optional Filter Chips
+
+Add filter chips above the agent grid:
+
+* All
+* Finance
+* Productivity
+* HR
+* Scheduling
+* Support
+* Education
+* Healthcare
+* Voice
+* Multi-Agent
+
+Filters should visually match the futuristic theme.
+If functionality is not implemented, keep them as UI-only for now.
+
+7. Add a Small Admin Preview Section
+
+After the agent library, add a subtle section titled:
+“Admin Command Center”
+
+Content:
+“Admin users can access a secure dashboard with a sidebar list of agents. Each agent opens a dedicated playarea. Current playareas can show a clean Coming Soon state until the modules are implemented.”
+
+Show a simple dashboard preview card:
+Sidebar:
+
+* Dashboard
+* Expense Tracker
+* Deadline Tracker
+* HR Agent
+* Appointment Booking
+* Customer Support
+
+Main panel:
+“Agent Playarea”
+“Status: Coming Soon”
+“This workspace will support agent testing, configuration, logs, and output preview in future versions.”
+
+8. Add a Simple Footer
+
+Footer content:
+AgentHub
+“A centralized showcase of AI agents and workflow experiments.”
+
+Footer links:
+
+* Agent Library
+* Admin Login
+
+Footer bottom text:
+“© 2026 AgentHub. All rights reserved.”
+
+9. Design Improvements
+
+Improve spacing, alignment, and visual hierarchy:
+
+* Reduce excessive hero height
+* Bring the Agent Library section higher
+* Use consistent card heights
+* Add subtle hover glow to cards
+* Add small futuristic line icons to each agent card
+* Use monospace styling for Agent IDs
+* Use pill badges for category, status, and tags
+* Keep text readable with strong contrast
+* Make mobile layout clean with one-column cards
+
+10. Important Restrictions
+
+Do not add:
+
+* Contact form
+* Newsletter signup
+* Pricing section
+* Testimonials
+* Sales CTA
+* Book a demo button
+* Start free trial button
+* Promotional marketing claims
+
+The final page should feel like:
+
+* A futuristic AI command center
+* A clean project showcase
+* A structured agent documentation hub
+* A portfolio of AI workflow experiments
+
+It should not feel like:
+
+* A SaaS sales website
+* A marketing landing page
+* A lead-generation funnel
