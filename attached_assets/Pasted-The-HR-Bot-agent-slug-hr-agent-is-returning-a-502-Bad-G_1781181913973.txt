@@ -1,0 +1,34 @@
+The HR Bot agent (slug: hr-agent) is returning a 502 Bad Gateway error when triggered from the UI. The endpoint is POST /api/agents/hr-agent/trigger and it forwards a PDF file to a Make.com webhook that takes 30-90 seconds to respond.
+
+Please debug and fix. Check these things in order:
+
+## 1. Check the backend logs
+Add console.log statements at each stage of the hr-agent trigger handler:
+- "HR Agent: received file upload" (log file name, size)
+- "HR Agent: forwarding to Make.com..." 
+- "HR Agent: Make.com responded with status X"
+- "HR Agent: response body: ..."
+- "HR Agent: ERROR: ..." in the catch block
+
+## 2. Most likely issue — timeout
+The Make.com webhook takes 30-90 seconds. Fix:
+- Increase the fetch/axios timeout to 120 seconds (120000ms) for this specific route
+- Make sure the Express route itself doesn't have a shorter timeout — add: `req.setTimeout(120000)` and `res.setTimeout(120000)` at the start of the hr-agent handler
+- If using node-fetch, pass: `{ signal: AbortSignal.timeout(120000) }` or use a custom AbortController with 120s timeout
+
+## 3. Check file forwarding is working
+- Is multer middleware actually applied to this route? The route needs multer configured to accept a single file with field name "resume"
+- Is the FormData being constructed correctly? Log the formData headers before sending
+- Is the Make.com webhook URL correct: https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7
+- Is the file buffer being read correctly from multer's req.file.buffer?
+
+## 4. Quick test
+Add a temporary test route that just hits the Make.com webhook with a simple POST (no file) to verify the URL is reachable:
+GET /api/agents/hr-agent/test → fetch the webhook URL with an empty POST → return the status code
+
+## 5. If timeout is the root cause, consider this alternative approach:
+Instead of waiting for Make.com to finish, make it async:
+- The trigger endpoint sends the file to Make.com and immediately returns { "status": "processing", "message": "Resume submitted for analysis" }
+- The frontend shows the progress steps as a simulation
+- Add a separate polling endpoint or use the Make.com webhook response approach where Make.com calls back to your server when done
+- But first try just increasing the timeout — it's simpler
