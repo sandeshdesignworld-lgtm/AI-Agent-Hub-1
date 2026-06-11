@@ -4,6 +4,22 @@ import { eq } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 
+type DeadlineEntry = {
+  Task: string;
+  "Last Date": string;
+  Piority: string;
+  Status: string;
+};
+
+function shapeDeadlineEntry(raw: Record<string, unknown>): DeadlineEntry | null {
+  const task = typeof raw["Task"] === "string" ? raw["Task"].trim() : "";
+  const lastDate = typeof raw["Last Date"] === "string" ? raw["Last Date"].trim() : "";
+  const piority = typeof raw["Piority"] === "string" ? raw["Piority"].trim() : "";
+  const status = typeof raw["Status"] === "string" ? raw["Status"].trim() : "";
+  if (!task || !lastDate || !piority || !status) return null;
+  return { Task: task, "Last Date": lastDate, Piority: piority, Status: status };
+}
+
 const router: IRouter = Router();
 
 router.get("/agents", async (req, res): Promise<void> => {
@@ -71,7 +87,25 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
   }
 
   const slug = params.data.slug;
-  req.log.info({ slug, entries: body.data.entries.length }, "Triggering agent webhook");
+
+  // For deadline-tracker, enforce exact Google Sheets column shape server-side
+  let webhookEntries: unknown[];
+  if (slug === "deadline-tracker") {
+    const shaped: DeadlineEntry[] = [];
+    for (const raw of body.data.entries) {
+      const entry = shapeDeadlineEntry(raw as Record<string, unknown>);
+      if (!entry) {
+        res.status(400).json({ error: "Each deadline entry must have Task, Last Date, Piority, and Status fields" });
+        return;
+      }
+      shaped.push(entry);
+    }
+    webhookEntries = shaped;
+  } else {
+    webhookEntries = body.data.entries;
+  }
+
+  req.log.info({ slug, entries: webhookEntries.length }, "Triggering agent webhook");
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60_000);
@@ -80,7 +114,7 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
     const webhookResponse = await fetch(agent.webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries: body.data.entries }),
+      body: JSON.stringify({ entries: webhookEntries }),
       signal: controller.signal,
     });
 
@@ -101,6 +135,7 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
     } else {
       res.json({ success: true, summary: responseText });
     }
+  
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error && err.name === "AbortError") {

@@ -461,9 +461,12 @@ export default function AgentDetail() {
                       <div>
                         <div className="text-xs text-muted-foreground font-mono uppercase mb-2">Email Preview</div>
                         <div className="rounded-lg overflow-hidden border border-border/50">
-                          <div
-                            className="bg-white text-black overflow-auto max-h-[500px] p-4 text-sm"
-                            dangerouslySetInnerHTML={{ __html: deadlineHtml }}
+                          <iframe
+                            srcDoc={deadlineHtml}
+                            sandbox=""
+                            className="w-full bg-white"
+                            style={{ minHeight: "400px", maxHeight: "500px", display: "block" }}
+                            title="Email Preview"
                           />
                         </div>
                       </div>
