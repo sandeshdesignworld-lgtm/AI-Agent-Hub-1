@@ -225,13 +225,13 @@ export default function AgentDetail() {
       }
 
       const payload: { entries: Record<string, string>[]; email?: string } = { entries };
-      if (isDeadlineTracker && recipientEmail.trim()) payload.email = recipientEmail.trim();
+      if (recipientEmail.trim()) payload.email = recipientEmail.trim();
       const data = await triggerMutation.mutateAsync({ slug, data: payload });
       clearTimers();
       setProgressStep(totalSteps);
+      sentEmailRef.current = recipientEmail.trim();
 
       if (isDeadlineTracker) {
-        sentEmailRef.current = recipientEmail.trim();
         setDeadlineHtml(data.html ?? data.summary ?? "");
       } else {
         setExpenseResult(data.summary ?? "");
@@ -258,7 +258,7 @@ export default function AgentDetail() {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
   const isSubmitDisabled = isDeadlineTracker
     ? !emailValid || deadlineEntries.some(e => !e.task)
-    : expenseEntries.some(e => !e.amount || !e.description);
+    : !emailValid || expenseEntries.some(e => !e.amount || !e.description);
 
   if (isLoading) {
     return (
@@ -454,7 +454,7 @@ export default function AgentDetail() {
                       <span>Workflow complete</span>
                       <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
                         <Mail className="w-3 h-3" />
-                        {isDeadlineTracker && sentEmailRef.current
+                        {sentEmailRef.current
                           ? `Email sent to ${sentEmailRef.current}`
                           : "Email sent"}
                       </span>
@@ -611,7 +611,23 @@ export default function AgentDetail() {
                 ) : (
                   /* ── Expense Tracker form ── */
                   <div className="space-y-6">
-                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block font-mono uppercase tracking-widest">
+                        Recipient Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="e.g. you@company.com"
+                        value={recipientEmail}
+                        onChange={e => setRecipientEmail(e.target.value)}
+                        className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 font-mono"
+                      />
+                      {recipientEmail && !emailValid && (
+                        <p className="text-[10px] text-destructive font-mono mt-1">Enter a valid email address</p>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
                       Expense Entries
                     </div>
 
