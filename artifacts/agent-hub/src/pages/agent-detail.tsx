@@ -410,6 +410,7 @@ export default function AgentDetail() {
                                 type="date"
                                 value={entry.date}
                                 onChange={e => updateEntry(index, "date", e.target.value)}
+                                style={{ colorScheme: "dark" }}
                                 className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
                               />
                             </div>
