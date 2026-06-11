@@ -1,0 +1,75 @@
+I need to make the Expense Tracker agent fully functional. Currently it shows a "Coming Soon" placeholder. Here's what needs to change:
+
+## 1. Backend: Add trigger route
+
+In the Express API server (artifacts/api-server/), add a new POST route:
+
+POST /api/agents/:slug/trigger
+
+This route should:
+- Require authentication (use the existing requireAuth middleware)
+- Accept a JSON body with an "entries" array
+- When slug is "expense-tracker", forward the request body to this n8n webhook URL: YOUR_N8N_WEBHOOK_URL
+- Use fetch() to POST the body as JSON to that webhook URL
+- Wait for the n8n response and return it as JSON to the frontend
+- Timeout after 60 seconds (n8n can be slow)
+- Return 404 for unknown agent slugs
+
+Add this route to the OpenAPI spec (lib/api-spec/openapi.yaml) and regenerate the API client.
+
+## 2. Frontend: Replace "Coming Soon" with interactive form
+
+When the user clicks on Expense Tracker in the sidebar, instead of the "Coming Soon" placeholder, show:
+
+### Initial State
+Show an "Initialize Agent" or "Run Agent" button (cyan/teal themed, matching the existing dark sci-fi design).
+
+### When clicked, show an inline form panel with:
+- **Amount** — number input, required, placeholder "e.g. 500"
+- **Date** — date picker, defaults to today
+- **Category** — dropdown with options: Food, Transport, Shopping, Utilities, Education, Office Supplies, Entertainment, Healthcare, Other
+- **Description** — text input, required, placeholder "e.g. Lunch at cafe"
+
+### Multi-entry support:
+- An "+ Add Another Entry" button below the form that adds another set of the same fields
+- Each entry should have a small "×" remove button
+- Show entry count like "Entry 1 of 3"
+
+### Submit button:
+- Label: "Run Agent" or "Execute"
+- Sends POST /api/agents/expense-tracker/trigger with body:
+  {
+    "entries": [
+      { "Amount": 500, "Date": "2026-06-11", "Category": "Food", "Description": "Lunch" },
+      { "Amount": 850, "Date": "2026-06-11", "Category": "Utilities", "Description": "Electric bill" }
+    ]
+  }
+
+### While waiting for response, show a step-by-step progress tracker:
+Animate through these 6 steps one by one (each takes ~2-3 seconds with a progress animation):
+1. "Receiving expense entries..." 
+2. "Logging to Google Sheets..."
+3. "Fetching weekly data..."
+4. "Calculating breakdown..."
+5. "Generating AI summary..."
+6. "Sending email report..."
+
+Use a vertical stepper UI with checkmarks for completed steps and a pulsing indicator on the current step. Match the existing dark/cyan theme.
+
+### When response arrives, show:
+- A styled output card with the AI-generated email summary text
+- A green "Email Sent Successfully" badge
+- A "Run Again" button to reset the form
+
+## 3. Design Requirements
+- Match the existing dark theme with cyan/teal accents
+- Use the existing font and component styles
+- Smooth animations (framer-motion if already used in the project)
+- The form should appear in the main content area where the "Coming Soon" message currently is
+- Mobile responsive
+
+## 4. Important Notes
+- The n8n webhook may take 15-30 seconds to respond, so the progress animation helps fill that wait time
+- The response from n8n will be JSON — look for the AI summary text in the response body and display it
+- Only expense-tracker needs this form — other agents should keep showing their current state
+- Don't touch the sidebar, header, or overall layout — only change the main content area for expense-tracker
