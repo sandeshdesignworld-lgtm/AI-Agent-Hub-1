@@ -90,6 +90,8 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
 
   // For deadline-tracker, enforce exact Google Sheets column shape server-side
   let webhookEntries: unknown[];
+  let webhookPayload: Record<string, unknown>;
+
   if (slug === "deadline-tracker") {
     const shaped: DeadlineEntry[] = [];
     for (const raw of body.data.entries) {
@@ -101,8 +103,13 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
       shaped.push(entry);
     }
     webhookEntries = shaped;
+    const email = typeof (req.body as Record<string, unknown>)["email"] === "string"
+      ? ((req.body as Record<string, unknown>)["email"] as string).trim()
+      : undefined;
+    webhookPayload = { entries: webhookEntries, ...(email ? { email } : {}) };
   } else {
     webhookEntries = body.data.entries;
+    webhookPayload = { entries: webhookEntries };
   }
 
   req.log.info({ slug, entries: webhookEntries.length }, "Triggering agent webhook");
@@ -114,7 +121,7 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
     const webhookResponse = await fetch(agent.webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries: webhookEntries }),
+      body: JSON.stringify(webhookPayload),
       signal: controller.signal,
     });
 

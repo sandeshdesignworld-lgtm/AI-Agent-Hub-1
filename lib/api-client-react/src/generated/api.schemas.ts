@@ -40,6 +40,7 @@ export interface AgentDetail {
 export type AgentTriggerInputEntriesItem = { [key: string]: unknown };
 
 export interface AgentTriggerInput {
+  email?: string | null;
   entries: AgentTriggerInputEntriesItem[];
 }
 

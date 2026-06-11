@@ -245,6 +245,9 @@ components:
       type: object
       required: [entries]
       properties:
+        email:
+          type: string
+          nullable: true
         entries:
           type: array
           items:

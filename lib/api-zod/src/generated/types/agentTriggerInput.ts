@@ -8,5 +8,6 @@
 import type { AgentTriggerInputEntriesItem } from './agentTriggerInputEntriesItem';
 
 export interface AgentTriggerInput {
+  email?: string | null;
   entries: AgentTriggerInputEntriesItem[];
 }

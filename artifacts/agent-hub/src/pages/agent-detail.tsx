@@ -60,7 +60,7 @@ const DEADLINE_STEPS = [
   "Aggregating task data...",
   "AI classifying deadlines (Today / Upcoming / Overdue)...",
   "Generating email digest...",
-  "Sending email to Shivamthakur6888@gmail.com...",
+  "Sending email digest...",
 ];
 const DEADLINE_DELAYS = [0, 1500, 3000, 5000, 7000, 10000, 13000];
 
@@ -143,6 +143,7 @@ export default function AgentDetail() {
   /* Deadline Tracker state */
   const [deadlineEntries, setDeadlineEntries] = useState<DeadlineEntry[]>([emptyDeadlineEntry()]);
   const [deadlineHtml, setDeadlineHtml] = useState<string | null>(null);
+  const [recipientEmail, setRecipientEmail] = useState("");
 
   const isAdmin = !!user;
   const hasWebhook = !!agent?.webhookUrl;
@@ -170,6 +171,7 @@ export default function AgentDetail() {
     setDeadlineHtml(null);
     setExpenseEntries([emptyExpenseEntry()]);
     setDeadlineEntries([emptyDeadlineEntry()]);
+    setRecipientEmail("");
     clearTimers();
     triggerMutation.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -182,6 +184,7 @@ export default function AgentDetail() {
     setDeadlineHtml(null);
     setExpenseEntries([emptyExpenseEntry()]);
     setDeadlineEntries([emptyDeadlineEntry()]);
+    setRecipientEmail("");
     clearTimers();
     triggerMutation.reset();
   }
@@ -220,7 +223,9 @@ export default function AgentDetail() {
         entries = expenseEntries as unknown as Record<string, string>[];
       }
 
-      const data = await triggerMutation.mutateAsync({ slug, data: { entries } });
+      const payload: { entries: Record<string, string>[]; email?: string } = { entries };
+      if (isDeadlineTracker && recipientEmail.trim()) payload.email = recipientEmail.trim();
+      const data = await triggerMutation.mutateAsync({ slug, data: payload });
       clearTimers();
       setProgressStep(totalSteps);
 
@@ -248,8 +253,9 @@ export default function AgentDetail() {
   }
 
   /* ── Disable check ── */
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
   const isSubmitDisabled = isDeadlineTracker
-    ? deadlineEntries.some(e => !e.task)
+    ? !emailValid || deadlineEntries.some(e => !e.task)
     : expenseEntries.some(e => !e.amount || !e.description);
 
   if (isLoading) {
@@ -443,18 +449,10 @@ export default function AgentDetail() {
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     <div className="flex items-center gap-2 text-green-400 text-sm font-mono mb-4">
                       <CheckCircle2 className="w-4 h-4" />
-                      {isDeadlineTracker ? (
-                        <span className="flex items-center gap-1.5 bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full text-xs">
-                          <Mail className="w-3 h-3" /> Email sent to Shivamthakur6888@gmail.com
-                        </span>
-                      ) : (
-                        <>
-                          <span>Workflow complete</span>
-                          <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
-                            <Mail className="w-3 h-3" /> Email sent
-                          </span>
-                        </>
-                      )}
+                      <span>Workflow complete</span>
+                      <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
+                        <Mail className="w-3 h-3" /> Email sent
+                      </span>
                     </div>
 
                     {isDeadlineTracker && deadlineHtml ? (
@@ -497,7 +495,23 @@ export default function AgentDetail() {
                 ) : isDeadlineTracker ? (
                   /* ── Deadline Tracker form ── */
                   <div className="space-y-6">
-                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block font-mono uppercase tracking-widest">
+                        Recipient Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="e.g. you@company.com"
+                        value={recipientEmail}
+                        onChange={e => setRecipientEmail(e.target.value)}
+                        className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 font-mono"
+                      />
+                      {recipientEmail && !emailValid && (
+                        <p className="text-[10px] text-destructive font-mono mt-1">Enter a valid email address</p>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
                       Task Entries
                     </div>
 

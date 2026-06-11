@@ -67,6 +67,7 @@ export const TriggerAgentParams = zod.object({
 })
 
 export const TriggerAgentBody = zod.object({
+  "email": zod.string().nullish(),
   "entries": zod.array(zod.record(zod.string(), zod.unknown()))
 })
 
