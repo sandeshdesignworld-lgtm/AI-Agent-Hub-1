@@ -144,6 +144,7 @@ export default function AgentDetail() {
   const [deadlineEntries, setDeadlineEntries] = useState<DeadlineEntry[]>([emptyDeadlineEntry()]);
   const [deadlineHtml, setDeadlineHtml] = useState<string | null>(null);
   const [recipientEmail, setRecipientEmail] = useState("");
+  const sentEmailRef = useRef<string>("");
 
   const isAdmin = !!user;
   const hasWebhook = !!agent?.webhookUrl;
@@ -230,6 +231,7 @@ export default function AgentDetail() {
       setProgressStep(totalSteps);
 
       if (isDeadlineTracker) {
+        sentEmailRef.current = recipientEmail.trim();
         setDeadlineHtml(data.html ?? data.summary ?? "");
       } else {
         setExpenseResult(data.summary ?? "");
@@ -451,7 +453,10 @@ export default function AgentDetail() {
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Workflow complete</span>
                       <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
-                        <Mail className="w-3 h-3" /> Email sent
+                        <Mail className="w-3 h-3" />
+                        {isDeadlineTracker && sentEmailRef.current
+                          ? `Email sent to ${sentEmailRef.current}`
+                          : "Email sent"}
                       </span>
                     </div>
 
