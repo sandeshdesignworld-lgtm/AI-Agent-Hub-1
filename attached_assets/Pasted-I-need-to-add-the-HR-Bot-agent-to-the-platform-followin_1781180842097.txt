@@ -1,0 +1,134 @@
+I need to add the HR Bot agent to the platform, following the same pattern as Expense Tracker and Deadline Tracker. This agent accepts a PDF resume upload, analyzes it with AI, and returns scoring results.
+
+## Context
+- Make.com webhook URL: https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7
+- The agent slug is: hr-agent
+- The webhook accepts multipart/form-data with a file field named "resume"
+- The webhook responds with JSON containing the AI analysis results
+- The existing trigger route is: POST /api/agents/:slug/trigger (already built for other agents)
+
+## 1. Backend: Add hr-agent to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a new case for slug === "hr-agent":
+
+- This agent is DIFFERENT from the others — it receives a FILE upload, not JSON
+- Accept multipart/form-data with a file field named "resume"
+- Use multer (or whatever file upload middleware is already in the project) to handle the incoming PDF
+- Forward the file to the Make.com webhook URL as multipart/form-data — the field name must be "resume"
+- Use node-fetch or axios with FormData to forward:
+```js
+  const FormData = require('form-data');
+  const formData = new FormData();
+  formData.append('resume', fileBuffer, { filename: originalFileName, contentType: 'application/pdf' });
+  const response = await fetch('https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7', {
+    method: 'POST',
+    body: formData,
+    headers: formData.getHeaders()
+  });
+```
+- Set timeout to 120 seconds (Make.com processes: upload to Drive → PDF conversion → AI analysis → Sheets → Email — this takes time)
+- Return the webhook JSON response as-is to the frontend
+- If the response is not JSON, wrap it: { "status": "completed", "raw": responseText }
+
+Also add a separate upload route if needed: POST /api/agents/hr-agent/upload — so we don't break the existing JSON-based trigger route for other agents. Or handle it within the same route with content-type detection.
+
+Update the seed data for hr-agent:
+- Name: "HR Bot"
+- Slug: "hr-agent"
+- Description: "AI-powered resume screener. Upload a PDF resume — the bot extracts text, scores candidates on degree, AI/ML keywords, experience, location, and relocation willingness, then categorizes as Shortlisted/Needs Review/Rejected. Shortlisted candidates automatically receive an interview invite email."
+- webhookUrl: "https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7"
+- Status: "active"
+
+## 2. Frontend: HR Bot agent detail page with PDF upload
+
+### Agent Run Console — Initial State:
+Show a PDF upload zone:
+- A dashed-border drop zone area with an upload icon
+- Text: "Drag & drop your resume (PDF)" and a "Browse Files" button
+- Accept only .pdf files, max 10MB
+- When a file is dropped/selected, show the filename with a small PDF icon and a "×" to remove
+- Below it, a "Analyze Resume" button (disabled until a file is selected)
+
+### When "Analyze Resume" is clicked:
+1. Disable the button, show "Analyzing..."
+2. Send the PDF file as multipart/form-data to POST /api/agents/hr-agent/trigger (or /upload)
+3. Show the step-by-step progress tracker (same stepper UI used in other agents):
+
+Animate through these 7 steps one by one (~3-4 seconds each):
+1. "Uploading resume..."
+2. "Saving to Google Drive..."
+3. "Converting PDF to text..."
+4. "AI analyzing candidate profile..."
+5. "Scoring against ATS criteria..."
+6. "Logging results to Google Sheets..."
+7. "Processing final decision..."
+
+Use the same vertical stepper with checkmarks for completed steps and a pulsing cyan indicator on the current step.
+
+### When response arrives, show a Candidate Analysis Card:
+
+The response JSON structure:
+{
+  "candidate_name": "string",
+  "email": "string",
+  "phone": "string",
+  "degree_detected": "string",
+  "location_detected": "string",
+  "relocate_detected": boolean,
+  "keywords_hit": ["LLM", "RAG", "Chatbot", "Agent", "GenAI"],
+  "degree_score": 0-30,
+  "keywords_score": 0-25,
+  "experience_score": 0-20,
+  "location_score": 0-15,
+  "relocate_score": 0-10,
+  "total_score": 0-100,
+  "status": "Shortlisted" | "Needs Review" | "Rejected"
+}
+
+Display as a styled card with these sections:
+
+**Header:**
+- Candidate name (large text, left aligned)
+- Status badge on the right: "Shortlisted" (green background), "Needs Review" (amber/yellow background), "Rejected" (red background)
+- Total score displayed prominently — like "78/100" with a circular progress ring or arc colored based on score (green ≥65, amber 40-64, red <40)
+
+**Score Breakdown — 5 horizontal progress bars:**
+Each bar shows the category name, score fraction, and a colored fill bar:
+- Degree: X/30 — subtitle showing degree_detected value (e.g. "B.Tech AI")
+- Keywords: X/25 — show keywords_hit as small cyan pill tags below the bar (e.g. "LLM" "RAG" "GenAI")
+- Experience: X/20
+- Location: X/15 — subtitle showing location_detected value (e.g. "Mumbai")
+- Relocation: X/10
+
+Bar colors: fill is green if ≥70% of max, amber if 40-69%, red if <40%
+
+**Contact Info — small section below scores:**
+- Email icon + email value
+- Phone icon + phone value
+
+**Footer / Action Result:**
+- If status is "Shortlisted": show a green banner "✓ Interview invite sent — candidate will receive a Calendly scheduling link via email"
+- If status is "Needs Review": show an amber banner "⚠ Flagged for manual review — logged to review sheet"
+- If status is "Rejected": show a red banner "✗ Below threshold — archived in rejected sheet"
+
+**Below the card:**
+- "Upload Another Resume" button that resets the entire form back to the upload state
+
+## 3. Design Requirements
+- Match the existing dark theme with cyan/teal accents used across all other agents
+- The upload drop zone should have a dashed cyan border that glows on hover/dragover
+- Score bars should animate from 0 to their values when the card appears
+- The status badge should be bold and immediately visible
+- Keywords pills should match the existing tag/badge style
+- Same stepper animation style as Expense Tracker and Deadline Tracker
+- Mobile responsive — the score bars should stack vertically on small screens
+- The upload zone should work with touch on mobile
+
+## 4. Important Notes
+- Make.com webhook takes 30-90 seconds to respond — the 7 progress steps spread across that wait time
+- The file MUST be sent as multipart/form-data with field name "resume" — this is critical
+- Only accept PDF files — show an error if user tries to upload other formats
+- Max file size 10MB — show an error if exceeded
+- If the webhook returns an error or times out, show a friendly error state with "Try Again" button
+- Only hr-agent gets this file upload layout — don't change other agents
+- Don't touch the sidebar, header, or overall page layout
