@@ -5,9 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AgentTriggerResultData } from './agentTriggerResultData';
 
 export interface AgentTriggerResult {
   success: boolean;
   summary?: string | null;
   html?: string | null;
+  data?: AgentTriggerResultData;
 }

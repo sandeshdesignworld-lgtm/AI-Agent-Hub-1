@@ -44,10 +44,13 @@ export interface AgentTriggerInput {
   entries: AgentTriggerInputEntriesItem[];
 }
 
+export type AgentTriggerResultData = { [key: string]: unknown } | null;
+
 export interface AgentTriggerResult {
   success: boolean;
   summary?: string | null;
   html?: string | null;
+  data?: AgentTriggerResultData;
 }
 
 export interface AdminCredentials {

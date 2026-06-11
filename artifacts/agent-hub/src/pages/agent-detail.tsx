@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useGetAgent, getGetAgentQueryKey, useGetAuthMe, getGetAuthMeQueryKey, useTriggerAgent } from "@workspace/api-client-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, TerminalSquare, Settings, Play, Database,
   Plus, Trash2, ChevronDown, CheckCircle2, Loader2,
-  RotateCcw, Mail, Zap, AlertTriangle
+  RotateCcw, Mail, Zap, AlertTriangle, Upload, FileText, X,
+  User, Phone, MapPin, GraduationCap
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,201 @@ function emptyDeadlineEntry(): DeadlineEntry {
   return { task: "", lastDate: tomorrow(), piority: "High", status: "Pending" };
 }
 
+/* ── HR Bot constants ── */
+const HR_STEPS = [
+  "Uploading resume...",
+  "Saving to Google Drive...",
+  "Converting PDF to text...",
+  "AI analyzing candidate profile...",
+  "Scoring against ATS criteria...",
+  "Logging results to Google Sheets...",
+  "Processing final decision...",
+];
+const HR_DELAYS = [0, 5000, 15000, 30000, 55000, 75000, 95000];
+
+interface HRResult {
+  candidate_name?: string;
+  email?: string;
+  phone?: string;
+  degree_detected?: string;
+  location_detected?: string;
+  relocate_detected?: boolean | string;
+  keywords_hit?: string[];
+  degree_score?: number;
+  keywords_score?: number;
+  experience_score?: number;
+  location_score?: number;
+  relocate_score?: number;
+  total_score?: number;
+  status?: "Shortlisted" | "Needs Review" | "Rejected" | string;
+  raw?: string;
+}
+
+/* ── Score Ring ── */
+function ScoreRing({ score, max = 100 }: { score: number; max?: number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const pct = Math.min(Math.max(score, 0), max) / max;
+  const strokeDashoffset = circumference * (1 - pct);
+  const color = score >= 65 ? "#4ade80" : score >= 40 ? "#fbbf24" : "#f87171";
+
+  return (
+    <div className="relative w-24 h-24 flex-shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r={radius} fill="none" stroke="currentColor" strokeWidth="8" className="text-border/30" />
+        <motion.circle
+          cx="44" cy="44" r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold font-display" style={{ color }}>{score}</span>
+        <span className="text-[9px] text-muted-foreground font-mono">/{max}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Score Bar ── */
+function ScoreBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const pct = Math.min(Math.max(value / max, 0), 1) * 100;
+  return (
+    <div>
+      <div className="flex justify-between text-xs font-mono mb-1.5">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="text-foreground font-medium">{value}/{max}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-border/30 overflow-hidden">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ backgroundColor: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ── Candidate Analysis Card ── */
+function CandidateAnalysisCard({ result }: { result: HRResult }) {
+  const status = result.status ?? "Needs Review";
+  const total = result.total_score ?? 0;
+  const statusColor =
+    status === "Shortlisted" ? { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/30", bar: "#4ade80" } :
+    status === "Rejected"    ? { text: "text-red-400",   bg: "bg-red-400/10",   border: "border-red-400/30",   bar: "#f87171" } :
+                               { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/30", bar: "#fbbf24" };
+
+  const bars = [
+    { label: "Degree",      value: result.degree_score ?? 0,     max: 30, color: "#818cf8" },
+    { label: "Keywords",    value: result.keywords_score ?? 0,   max: 25, color: "#22d3ee" },
+    { label: "Experience",  value: result.experience_score ?? 0, max: 20, color: "#a78bfa" },
+    { label: "Location",    value: result.location_score ?? 0,   max: 15, color: "#34d399" },
+    { label: "Relocation",  value: result.relocate_score ?? 0,   max: 10, color: "#fb923c" },
+  ];
+
+  const keywords: string[] = Array.isArray(result.keywords_hit) ? result.keywords_hit : [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-5"
+    >
+      {/* Header: name + score ring + status */}
+      <div className="flex items-start gap-4 p-4 bg-background/60 border border-border/50 rounded-xl">
+        <ScoreRing score={total} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className="font-display font-semibold text-lg text-foreground truncate">
+              {result.candidate_name ?? "Candidate"}
+            </span>
+            <span className={cn("text-[11px] font-mono px-2 py-0.5 rounded-full border font-semibold", statusColor.text, statusColor.bg, statusColor.border)}>
+              {status}
+            </span>
+          </div>
+          {result.degree_detected && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <GraduationCap className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{result.degree_detected}</span>
+            </div>
+          )}
+          {result.location_detected && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{result.location_detected}</span>
+              {result.relocate_detected === true || result.relocate_detected === "Yes" ? (
+                <span className="ml-1 text-[10px] text-cyan-400 border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-px rounded-full font-mono">Open to Relocate</span>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Score bars */}
+      {(bars.some(b => b.value > 0)) && (
+        <div className="p-4 bg-background/60 border border-border/50 rounded-xl space-y-3">
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-3">ATS Score Breakdown</div>
+          {bars.map(bar => (
+            <ScoreBar key={bar.label} label={bar.label} value={bar.value} max={bar.max} color={bar.color} />
+          ))}
+        </div>
+      )}
+
+      {/* Keywords */}
+      {keywords.length > 0 && (
+        <div className="p-4 bg-background/60 border border-border/50 rounded-xl">
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-3">Matched Keywords</div>
+          <div className="flex flex-wrap gap-2">
+            {keywords.map(kw => (
+              <span key={kw} className="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400">
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Contact info */}
+      {(result.email || result.phone) && (
+        <div className="p-4 bg-background/60 border border-border/50 rounded-xl">
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-3">Contact</div>
+          <div className="space-y-1.5">
+            {result.email && (
+              <div className="flex items-center gap-2 text-sm text-foreground/80">
+                <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="font-mono">{result.email}</span>
+              </div>
+            )}
+            {result.phone && (
+              <div className="flex items-center gap-2 text-sm text-foreground/80">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="font-mono">{result.phone}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Status footer banner */}
+      <div className={cn("rounded-xl p-3 text-center text-sm font-semibold font-mono border", statusColor.text, statusColor.bg, statusColor.border)}>
+        {status === "Shortlisted" && "✓ Candidate shortlisted — interview workflow triggered"}
+        {status === "Needs Review" && "⚠ Manual review recommended for this candidate"}
+        {status === "Rejected"    && "✗ Candidate does not meet minimum criteria"}
+        {status !== "Shortlisted" && status !== "Needs Review" && status !== "Rejected" && `Status: ${status}`}
+      </div>
+    </motion.div>
+  );
+}
+
 /* ── Shared progress stepper ── */
 function ProgressStepper({ steps, currentStep }: { steps: string[]; currentStep: number }) {
   return (
@@ -148,25 +344,43 @@ export default function AgentDetail() {
   const [recipientEmail, setRecipientEmail] = useState("");
   const sentEmailRef = useRef<string>("");
 
+  /* HR Bot state */
+  const [hrFile, setHrFile] = useState<File | null>(null);
+  const [hrDragOver, setHrDragOver] = useState(false);
+  const [hrResult, setHrResult] = useState<HRResult | null>(null);
+  const [hrLoading, setHrLoading] = useState(false);
+  const hrAbortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const isAdmin = !!user;
   const hasWebhook = !!agent?.webhookUrl;
   const isExpenseTracker = slug === "expense-tracker";
   const isDeadlineTracker = slug === "deadline-tracker";
-  const isRunning = triggerMutation.isPending || progressStep >= 0;
-  const isDone = isExpenseTracker ? expenseResult !== null : deadlineHtml !== null;
+  const isHRAgent = slug === "hr-agent";
+  const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
+  const isDone = isHRAgent
+    ? hrResult !== null
+    : isExpenseTracker
+      ? expenseResult !== null
+      : deadlineHtml !== null;
 
-  const progressSteps = isDeadlineTracker ? DEADLINE_STEPS : EXPENSE_STEPS;
-  const progressDelays = isDeadlineTracker ? DEADLINE_DELAYS : EXPENSE_DELAYS;
+  const progressSteps = isHRAgent ? HR_STEPS : isDeadlineTracker ? DEADLINE_STEPS : EXPENSE_STEPS;
+  const progressDelays = isHRAgent ? HR_DELAYS : isDeadlineTracker ? DEADLINE_DELAYS : EXPENSE_DELAYS;
 
   function clearTimers() {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
   }
 
-  useEffect(() => () => clearTimers(), []);
+  useEffect(() => () => {
+    clearTimers();
+    hrAbortRef.current?.abort();
+  }, []);
 
   /* Reset panel state when slug changes */
   useEffect(() => {
+    hrAbortRef.current?.abort();
+    hrAbortRef.current = null;
     setPanelOpen(false);
     setProgressStep(-1);
     setRunError(null);
@@ -175,12 +389,17 @@ export default function AgentDetail() {
     setExpenseEntries([emptyExpenseEntry()]);
     setDeadlineEntries([emptyDeadlineEntry()]);
     setRecipientEmail("");
+    setHrFile(null);
+    setHrResult(null);
+    setHrLoading(false);
     clearTimers();
     triggerMutation.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   function resetForm() {
+    hrAbortRef.current?.abort();
+    hrAbortRef.current = null;
     setProgressStep(-1);
     setRunError(null);
     setExpenseResult(null);
@@ -188,6 +407,9 @@ export default function AgentDetail() {
     setExpenseEntries([emptyExpenseEntry()]);
     setDeadlineEntries([emptyDeadlineEntry()]);
     setRecipientEmail("");
+    setHrFile(null);
+    setHrResult(null);
+    setHrLoading(false);
     clearTimers();
     triggerMutation.reset();
   }
@@ -246,6 +468,69 @@ export default function AgentDetail() {
     }
   }
 
+  const handleHRRun = useCallback(async () => {
+    if (!hrFile) return;
+    setRunError(null);
+    setHrResult(null);
+
+    const totalSteps = startProgress(HR_DELAYS, HR_STEPS.length);
+    setHrLoading(true);
+
+    const controller = new AbortController();
+    hrAbortRef.current = controller;
+
+    const formData = new FormData();
+    formData.append("resume", hrFile);
+
+    try {
+      const response = await fetch("/api/agents/hr-agent/trigger", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        let errMsg = `HTTP ${response.status}`;
+        try {
+          const errData = await response.json() as { error?: string };
+          if (errData.error) errMsg = errData.error;
+        } catch { /* ignore */ }
+        throw new Error(errMsg);
+      }
+
+      const json = await response.json() as { success: boolean; data?: HRResult };
+      clearTimers();
+      setProgressStep(totalSteps);
+      setHrResult(json.data ?? {});
+    } catch (err: unknown) {
+      clearTimers();
+      setProgressStep(-1);
+      if (err instanceof Error && err.name === "AbortError") {
+        setRunError("Webhook timed out. Please try again.");
+      } else {
+        setRunError(err instanceof Error ? err.message : "Request failed.");
+      }
+    } finally {
+      setHrLoading(false);
+      hrAbortRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hrFile]);
+
+  function handleHRFileSelect(file: File) {
+    if (file.type !== "application/pdf") {
+      setRunError("Only PDF files are accepted.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setRunError("File is too large. Maximum size is 10 MB.");
+      return;
+    }
+    setRunError(null);
+    setHrFile(file);
+  }
+
   /* ── Expense entry helpers ── */
   function updateExpenseEntry(index: number, field: keyof ExpenseEntry, value: string) {
     setExpenseEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
@@ -258,9 +543,11 @@ export default function AgentDetail() {
 
   /* ── Disable check ── */
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
-  const isSubmitDisabled = isDeadlineTracker
-    ? !emailValid || deadlineEntries.some(e => !e.task)
-    : !emailValid || expenseEntries.some(e => !e.amount || !e.description);
+  const isSubmitDisabled = isHRAgent
+    ? !hrFile
+    : isDeadlineTracker
+      ? !emailValid || deadlineEntries.some(e => !e.task)
+      : !emailValid || expenseEntries.some(e => !e.amount || !e.description);
 
   if (isLoading) {
     return (
@@ -434,7 +721,7 @@ export default function AgentDetail() {
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     <div className="flex items-center gap-2 text-destructive text-sm font-mono">
                       <AlertTriangle className="w-4 h-4" />
-                      <span>Something went wrong. Check n8n and try again.</span>
+                      <span>Something went wrong. Check the webhook and try again.</span>
                     </div>
                     <div className="text-xs text-destructive/80 font-mono bg-destructive/5 border border-destructive/20 rounded p-3">
                       {runError}
@@ -444,60 +731,163 @@ export default function AgentDetail() {
                       className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2"
                       onClick={resetForm}
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> Retry
+                      <RotateCcw className="w-3.5 h-3.5" /> Try Again
                     </Button>
                   </motion.div>
 
                 ) : isDone ? (
                   /* ── Result state ── */
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                    <div className="flex items-center gap-2 text-green-400 text-sm font-mono mb-4">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Workflow complete</span>
-                      <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
-                        <Mail className="w-3 h-3" />
-                        {sentEmailRef.current
-                          ? `Email sent to ${sentEmailRef.current}`
-                          : "Email sent"}
-                      </span>
-                    </div>
-
-                    {isDeadlineTracker && deadlineHtml ? (
-                      <div>
-                        <div className="text-xs text-muted-foreground font-mono uppercase mb-2">Email Preview</div>
-                        <div className="rounded-lg overflow-hidden border border-border/50">
-                          <iframe
-                            srcDoc={deadlineHtml}
-                            sandbox=""
-                            className="w-full bg-white"
-                            style={{ minHeight: "400px", maxHeight: "500px", display: "block" }}
-                            title="Email Preview"
-                          />
+                    {isHRAgent && hrResult ? (
+                      <>
+                        <div className="flex items-center gap-2 text-green-400 text-sm font-mono mb-4">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Analysis complete</span>
                         </div>
-                      </div>
+                        <CandidateAnalysisCard result={hrResult} />
+                        <Button
+                          variant="outline"
+                          className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2 mt-2"
+                          onClick={resetForm}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Upload Another Resume
+                        </Button>
+                      </>
                     ) : (
-                      <div className="bg-background/60 border border-border/50 rounded-lg p-5">
-                        <div className="text-xs text-primary/70 font-mono uppercase mb-3 flex items-center gap-1.5">
-                          <Zap className="w-3 h-3" /> AI-Generated Summary
+                      <>
+                        <div className="flex items-center gap-2 text-green-400 text-sm font-mono mb-4">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Workflow complete</span>
+                          <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
+                            <Mail className="w-3 h-3" />
+                            {sentEmailRef.current
+                              ? `Email sent to ${sentEmailRef.current}`
+                              : "Email sent"}
+                          </span>
                         </div>
-                        <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-mono">
-                          {expenseResult}
-                        </div>
-                      </div>
-                    )}
 
-                    <Button
-                      variant="outline"
-                      className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2"
-                      onClick={resetForm}
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Run Again
-                    </Button>
+                        {isDeadlineTracker && deadlineHtml ? (
+                          <div>
+                            <div className="text-xs text-muted-foreground font-mono uppercase mb-2">Email Preview</div>
+                            <div className="rounded-lg overflow-hidden border border-border/50">
+                              <iframe
+                                srcDoc={deadlineHtml}
+                                sandbox=""
+                                className="w-full bg-white"
+                                style={{ minHeight: "400px", maxHeight: "500px", display: "block" }}
+                                title="Email Preview"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-background/60 border border-border/50 rounded-lg p-5">
+                            <div className="text-xs text-primary/70 font-mono uppercase mb-3 flex items-center gap-1.5">
+                              <Zap className="w-3 h-3" /> AI-Generated Summary
+                            </div>
+                            <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-mono">
+                              {expenseResult}
+                            </div>
+                          </div>
+                        )}
+
+                        <Button
+                          variant="outline"
+                          className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2"
+                          onClick={resetForm}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Run Again
+                        </Button>
+                      </>
+                    )}
                   </motion.div>
 
                 ) : progressStep >= 0 ? (
                   /* ── Progress state ── */
                   <ProgressStepper steps={progressSteps} currentStep={progressStep} />
+
+                ) : isHRAgent ? (
+                  /* ── HR Bot upload form ── */
+                  <div className="space-y-5">
+                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
+                      Resume Upload
+                    </div>
+
+                    {/* Drop zone */}
+                    {!hrFile ? (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-10 cursor-pointer transition-all",
+                          hrDragOver
+                            ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(var(--primary),0.2)]"
+                            : "border-border/40 hover:border-primary/50 hover:bg-primary/5"
+                        )}
+                        onDragOver={e => { e.preventDefault(); setHrDragOver(true); }}
+                        onDragLeave={() => setHrDragOver(false)}
+                        onDrop={e => {
+                          e.preventDefault();
+                          setHrDragOver(false);
+                          const file = e.dataTransfer.files[0];
+                          if (file) handleHRFileSelect(file);
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                      >
+                        <div className={cn("w-12 h-12 rounded-full flex items-center justify-center transition-colors", hrDragOver ? "bg-primary/20" : "bg-primary/10")}>
+                          <Upload className={cn("w-6 h-6 transition-colors", hrDragOver ? "text-primary" : "text-primary/60")} />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-foreground">Drag &amp; drop your resume (PDF)</p>
+                          <p className="text-xs text-muted-foreground mt-1">or click to browse &mdash; max 10 MB</p>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) handleHRFileSelect(file);
+                            e.target.value = "";
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      /* Selected file preview */
+                      <div className="flex items-center gap-3 p-3 bg-background/60 border border-primary/20 rounded-lg">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-mono text-foreground truncate">{hrFile.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">
+                            {(hrFile.size / 1024).toFixed(0)} KB &bull; PDF
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setHrFile(null)}
+                          className="text-muted-foreground/40 hover:text-destructive transition-colors flex-shrink-0"
+                          aria-label="Remove file"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        className="w-full gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
+                        onClick={handleHRRun}
+                        disabled={isRunning || isSubmitDisabled}
+                      >
+                        <User className="w-4 h-4" /> Analyze Resume
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground font-mono text-center mt-2">
+                        PDF → Make.com → OpenAI → ATS Scoring → Google Sheets
+                      </p>
+                    </div>
+                  </div>
 
                 ) : isDeadlineTracker ? (
                   /* ── Deadline Tracker form ── */

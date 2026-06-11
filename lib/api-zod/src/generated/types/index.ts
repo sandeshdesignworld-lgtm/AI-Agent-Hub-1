@@ -13,6 +13,7 @@ export * from './agentDetail';
 export * from './agentTriggerInput';
 export * from './agentTriggerInputEntriesItem';
 export * from './agentTriggerResult';
+export * from './agentTriggerResultData';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './sampleExample';

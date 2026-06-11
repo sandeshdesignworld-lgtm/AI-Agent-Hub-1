@@ -76,8 +76,8 @@ const agents = [
   },
   {
     slug: "hr-agent",
-    name: "AI Resume Screening Agent",
-    shortDescription: "ATS-powered recruitment assistant that evaluates AI candidates, scores resumes, automates shortlisting, and triggers interview workflows.",
+    name: "HR Bot",
+    shortDescription: "Upload a candidate's PDF resume for instant ATS scoring — degree, keywords, experience, location, and relocation eligibility evaluated in seconds.",
     description:
       "The AI Resume Screening Agent automates the initial candidate evaluation process for AI and machine learning roles. The system analyzes resumes, extracts candidate information, evaluates qualifications against predefined hiring criteria, and generates structured hiring recommendations.\n\nBy eliminating manual resume screening, recruiters can quickly identify high-potential candidates while maintaining a consistent and objective evaluation process across every application.",
     howItWorks:
@@ -115,6 +115,7 @@ const agents = [
         }, null, 2),
       },
     ],
+    webhookUrl: "https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7",
     order: 3,
   },
   {

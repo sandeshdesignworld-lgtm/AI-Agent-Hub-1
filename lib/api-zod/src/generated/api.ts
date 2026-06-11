@@ -74,7 +74,8 @@ export const TriggerAgentBody = zod.object({
 export const TriggerAgentResponse = zod.object({
   "success": zod.boolean(),
   "summary": zod.string().nullish(),
-  "html": zod.string().nullish()
+  "html": zod.string().nullish(),
+  "data": zod.record(zod.string(), zod.unknown()).nullish()
 })
 
 

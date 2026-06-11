@@ -1,8 +1,21 @@
 import { Router, type IRouter } from "express";
+import multer from "multer";
 import { db, agentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are accepted"));
+    }
+  },
+});
 
 type DeadlineEntry = {
   Task: string;
@@ -56,6 +69,71 @@ router.get("/agents/:slug", async (req, res): Promise<void> => {
   }
 
   res.json(GetAgentResponse.parse(agent));
+});
+
+/* ── HR Bot — file upload route (must be declared before the generic :slug route) ── */
+router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), async (req, res): Promise<void> => {
+  if (!req.file) {
+    res.status(400).json({ error: "No resume file uploaded" });
+    return;
+  }
+
+  const [agent] = await db
+    .select({ webhookUrl: agentsTable.webhookUrl })
+    .from(agentsTable)
+    .where(eq(agentsTable.slug, "hr-agent"));
+
+  if (!agent?.webhookUrl) {
+    res.status(400).json({ error: "No webhook configured for HR Bot" });
+    return;
+  }
+
+  const formData = new FormData();
+  const blob = new Blob([req.file.buffer], { type: "application/pdf" });
+  formData.append("resume", blob, req.file.originalname || "resume.pdf");
+
+  req.log.info("Triggering HR Bot webhook");
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
+  try {
+    const webhookResponse = await fetch(agent.webhookUrl, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!webhookResponse.ok) {
+      const text = await webhookResponse.text();
+      req.log.error({ status: webhookResponse.status, body: text }, "HR webhook returned error");
+      res.status(502).json({ error: `Webhook error: ${webhookResponse.status}` });
+      return;
+    }
+
+    const responseText = await webhookResponse.text();
+    req.log.info("HR webhook response received");
+
+    let data: unknown;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = { raw: responseText };
+    }
+
+    res.json({ success: true, data });
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      req.log.error("HR webhook timed out after 120s");
+      res.status(504).json({ error: "Webhook timed out after 120 seconds" });
+    } else {
+      req.log.error({ err }, "HR webhook request failed");
+      res.status(502).json({ error: "Webhook request failed" });
+    }
+  }
 });
 
 router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void> => {
