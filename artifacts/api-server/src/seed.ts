@@ -41,28 +41,34 @@ const agents = [
   },
   {
     slug: "deadline-tracker",
-    name: "Deadline Tracker",
-    shortDescription: "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
+    name: "Task Companion Agent",
+    shortDescription: "Automatically monitors pending tasks, prioritizes deadlines, and delivers AI-generated deadline reports directly to your inbox.",
     description:
-      "The Deadline Tracker Agent is an n8n-powered workflow that connects to your Google Sheets task repository. On demand, it reads all pending tasks, applies AI classification to group them as Today, Upcoming, or Overdue, and compiles a richly formatted HTML digest email delivered directly to your inbox. It turns a flat spreadsheet of tasks into an intelligent, actionable briefing.",
+      "The Task Companion Agent is an AI-powered n8n workflow that integrates with your Google Sheets task repository to deliver intelligent deadline management. It continuously monitors all pending tasks, applies a Deadline Classification Engine to prioritize them by urgency, and generates comprehensive AI-powered deadline reports delivered automatically to your inbox. By combining Pending Task Monitoring with Overdue Task Detection and Priority-Based Task Analysis, the Task Companion Agent transforms your task list into an actionable briefing — ensuring you never miss a critical deadline.",
     howItWorks:
-      "1. A webhook trigger receives task entries and saves them to the connected Google Sheets task repository.\n2. The workflow fetches all tasks and filters by pending status.\n3. Entries are aggregated and passed to the AI classification engine.\n4. AI classifies each task as Today, Upcoming, or Overdue based on the Last Date field.\n5. A formatted HTML digest email is generated with categorized task sections.\n6. The email is delivered to the configured inbox via Gmail, and the HTML is returned as an API response for preview in the admin panel.",
+      "1. The agent connects to your Google Sheets task repository via Google Sheets Connectivity and retrieves all active task entries.\n2. The Pending Task Monitoring module filters tasks by status, isolating all incomplete items for analysis.\n3. The Overdue Task Detection engine identifies tasks that have exceeded their deadline, flagging them for immediate attention.\n4. The Deadline Classification Engine applies Priority-Based Task Analysis to rank remaining tasks by urgency and due date.\n5. The AI Report Generation module compiles a comprehensive deadline report, categorizing tasks as Overdue, Due Today, or Upcoming with priority labels.\n6. The completed report is dispatched via Automated Email Delivery to your configured inbox, and an HTML preview is returned as an API response for the admin panel.",
     requirements:
-      "Google Sheets Task Repository\nTask Entry Collection (Task, Last Date, Piority, Status)\nAI Deadline Classification Engine\nToday / Upcoming / Overdue Categorization Logic\nEmail Digest Template\nGmail Delivery Integration\nAdmin Webhook Access\nn8n Workflow Orchestration",
+      "Task Repository Integration\nGoogle Sheets Connectivity\nDeadline Classification Engine\nPriority-Based Task Analysis\nPending Task Monitoring\nOverdue Task Detection\nAI Report Generation\nAutomated Email Delivery",
     expectedOutput:
-      "• All pending tasks fetched and classified by deadline urgency\n• Tasks grouped into Today, Upcoming, and Overdue sections\n• Priority labels (High / Medium / Low) preserved in the digest\n• Formatted HTML email with clear task sections and styling\n• Email delivered to Shivamthakur6888@gmail.com on demand\n• HTML email preview returned as API response for admin panel\n• Overdue tasks highlighted for immediate attention\n• Task count summary per category included in digest",
+      "• All pending tasks fetched from the connected Google Sheets task repository\n• Tasks classified into Overdue, Due Today, and Upcoming categories by the Deadline Classification Engine\n• Priority labels (High / Medium / Low) applied and preserved across all task entries\n• Overdue tasks detected and flagged for immediate action\n• Priority-Based Task Analysis ranking applied to all active tasks\n• AI-generated deadline report compiled with structured task sections\n• Task count summary per category included in the report\n• Formatted HTML report with clear deadline sections and priority indicators\n• Report delivered automatically to the configured inbox via Automated Email Delivery\n• HTML report preview returned as an API response for admin panel review",
     sampleExamples: [
       {
-        title: "Deadline Digest Email",
-        input: "Tasks submitted: Submit quarterly report (High, 2026-06-15, Pending), Review vendor contract (Medium, 2026-06-11, Pending), Update project docs (Low, 2026-06-20, Pending).",
+        title: "Daily Deadline Report",
+        input: "Pending tasks retrieved: Finalize project proposal (High, 2026-06-11, Pending), Submit budget review (Medium, 2026-06-14, Pending), Update team documentation (Low, 2026-06-18, Pending), Complete client onboarding (High, 2026-06-09, Pending).",
         output:
-          "📬 Deadline Digest\n\n🔴 TODAY\n• Review vendor contract — High priority (due 2026-06-11)\n\n🟡 UPCOMING\n• Submit quarterly report — High priority (due 2026-06-15)\n• Update project docs — Low priority (due 2026-06-20)\n\n✅ No overdue tasks.\n\nEmail delivered to Shivamthakur6888@gmail.com.",
+          "📋 Daily Deadline Report\n\n🔴 OVERDUE\n• Complete client onboarding — High priority (was due 2026-06-09)\n\n🟠 DUE TODAY\n• Finalize project proposal — High priority (due 2026-06-11)\n\n🟡 UPCOMING\n• Submit budget review — Medium priority (due 2026-06-14)\n• Update team documentation — Low priority (due 2026-06-18)\n\nTask Summary: 1 Overdue | 1 Due Today | 2 Upcoming\n\nReport delivered to configured inbox.",
       },
       {
-        title: "Overdue Task Alert",
-        input: "Tasks with past deadlines detected: Fix login bug (High, 2026-06-08, Pending), Send invoice (Medium, 2026-06-09, Pending).",
+        title: "Task Categorization",
+        input: "Task batch submitted for categorization: Design wireframes (High, 2026-06-13, Pending), Code review session (Medium, 2026-06-11, Pending), Update dependencies (Low, 2026-06-07, Pending), Prepare sprint notes (Medium, 2026-06-16, Pending).",
         output:
-          "⚠️ Overdue Task Alert\n\n🔴 OVERDUE\n• Fix login bug — High priority (was due 2026-06-08)\n• Send invoice — Medium priority (was due 2026-06-09)\n\nImmediate action required on 2 overdue tasks.\n\nEmail digest sent to Shivamthakur6888@gmail.com.",
+          "📂 Task Categorization Report\n\nDeadline Classification Engine Results:\n\n🔴 OVERDUE (1)\n• Update dependencies — Low priority (was due 2026-06-07)\n\n🟠 DUE TODAY (1)\n• Code review session — Medium priority (due 2026-06-11)\n\n🟡 UPCOMING (2)\n• Design wireframes — High priority (due 2026-06-13)\n• Prepare sprint notes — Medium priority (due 2026-06-16)\n\nPriority-Based Analysis: 1 High | 2 Medium | 1 Low\n\nAll tasks classified and report dispatched.",
+      },
+      {
+        title: "Executive Summary",
+        input: "End-of-day summary requested: 8 total pending tasks across all priorities. 2 overdue, 1 due today, 5 upcoming. Report ready for executive delivery.",
+        output:
+          "Subject: Task Companion Agent — Daily Deadline Summary\n\nHi,\n\nYour automated daily deadline report is ready.\n\nTask Overview:\n• Total Pending Tasks: 8\n• 🔴 Overdue: 2 tasks requiring immediate attention\n• 🟠 Due Today: 1 task\n• 🟡 Upcoming: 5 tasks\n\nPriority Breakdown:\n• High Priority: 3 tasks\n• Medium Priority: 3 tasks\n• Low Priority: 2 tasks\n\nAI Observations:\n• 2 overdue tasks detected — immediate action recommended\n• High-priority upcoming tasks should be scheduled for review\n• No blockers identified for tasks due later in the week\n\nThis report was generated automatically by the Task Companion Agent.",
       },
     ],
     webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/deadline-tracker",

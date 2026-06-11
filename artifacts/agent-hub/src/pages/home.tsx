@@ -28,7 +28,7 @@ const AGENT_META: Record<string, {
   "deadline-tracker": {
     category: "Productivity",
     status: "Details Available",
-    tags: ["Task Tracking", "Priority Mapping", "Deadlines"],
+    tags: ["Deadline Management", "Task Monitoring", "Productivity Automation"],
     icon: <Clock className="w-5 h-5" />,
   },
   "hr-agent": {
