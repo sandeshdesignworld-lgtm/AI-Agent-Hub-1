@@ -6,9 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ExpenseEntry {
-  amount: string;
-  category: string;
-  description: string;
-  date: string;
-}
+export type AgentTriggerInputEntriesItem = { [key: string]: unknown };

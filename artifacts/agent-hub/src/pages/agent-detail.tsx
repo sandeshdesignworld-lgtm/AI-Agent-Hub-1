@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, TerminalSquare, Settings, Play, Database,
   Plus, Trash2, ChevronDown, CheckCircle2, Loader2,
-  RotateCcw, Mail, Zap
+  RotateCcw, Mail, Zap, AlertTriangle
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -16,19 +16,22 @@ import { cn } from "@/lib/utils";
 const AGENT_ID_DISPLAY: Record<string, string> = {
   "hr-agent": "HR-ATS-001",
   "expense-tracker": "FIN-EXP-001",
+  "deadline-tracker": "DL-TRK-001",
 };
 
 const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
   "hr-agent": "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
   "expense-tracker": "Automatically analyzes weekly spending, identifies financial patterns, and delivers AI-generated expense reports directly to your inbox.",
+  "deadline-tracker": "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
 };
 
+/* ── Expense Tracker constants ── */
 const EXPENSE_CATEGORIES = [
   "Food", "Transport", "Utilities", "Entertainment",
   "Shopping", "Office Supplies", "Healthcare", "Education", "Other",
 ];
 
-const PROGRESS_STEPS = [
+const EXPENSE_STEPS = [
   "Submitting expense data...",
   "Saving to Google Sheets...",
   "Filtering this week's expenses...",
@@ -36,8 +39,7 @@ const PROGRESS_STEPS = [
   "Generating expense report...",
   "Sending email summary...",
 ];
-
-const STEP_DELAYS = [0, 1000, 2000, 3000, 5000, 7000];
+const EXPENSE_DELAYS = [0, 1000, 2000, 3000, 5000, 7000];
 
 interface ExpenseEntry {
   amount: string;
@@ -46,13 +48,74 @@ interface ExpenseEntry {
   date: string;
 }
 
-function emptyEntry(): ExpenseEntry {
-  return {
-    amount: "",
-    category: "Food",
-    description: "",
-    date: new Date().toISOString().split("T")[0],
-  };
+function emptyExpenseEntry(): ExpenseEntry {
+  return { amount: "", category: "Food", description: "", date: new Date().toISOString().split("T")[0] };
+}
+
+/* ── Deadline Tracker constants ── */
+const DEADLINE_STEPS = [
+  "Saving tasks to Google Sheets...",
+  "Fetching all pending tasks...",
+  "Filtering by status...",
+  "Aggregating task data...",
+  "AI classifying deadlines (Today / Upcoming / Overdue)...",
+  "Generating email digest...",
+  "Sending email to Shivamthakur6888@gmail.com...",
+];
+const DEADLINE_DELAYS = [0, 1500, 3000, 5000, 7000, 10000, 13000];
+
+const PRIORITY_OPTIONS = ["High", "Medium", "Low"];
+const STATUS_OPTIONS = ["Pending", "In Progress", "Completed"];
+
+interface DeadlineEntry {
+  task: string;
+  lastDate: string;
+  piority: string;
+  status: string;
+}
+
+function tomorrow(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+}
+
+function emptyDeadlineEntry(): DeadlineEntry {
+  return { task: "", lastDate: tomorrow(), piority: "High", status: "Pending" };
+}
+
+/* ── Shared progress stepper ── */
+function ProgressStepper({ steps, currentStep }: { steps: string[]; currentStep: number }) {
+  return (
+    <div className="space-y-3">
+      {steps.map((step, i) => {
+        const isActive = i === currentStep || (currentStep >= steps.length && i === steps.length - 1);
+        const isDone = i < currentStep || currentStep >= steps.length;
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: isDone || isActive ? 1 : 0.3, x: 0 }}
+            className="flex items-center gap-3 text-sm"
+          >
+            {isDone ? (
+              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+            ) : isActive ? (
+              <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border border-border/50 flex-shrink-0" />
+            )}
+            <span className={cn(
+              "font-mono",
+              isDone ? "text-muted-foreground line-through" : isActive ? "text-primary" : "text-muted-foreground/40"
+            )}>
+              {step}
+            </span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function AgentDetail() {
@@ -69,15 +132,27 @@ export default function AgentDetail() {
   const triggerMutation = useTriggerAgent();
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [entries, setEntries] = useState<ExpenseEntry[]>([emptyEntry()]);
   const [progressStep, setProgressStep] = useState(-1);
-  const [result, setResult] = useState<{ summary: string } | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  /* Expense Tracker state */
+  const [expenseEntries, setExpenseEntries] = useState<ExpenseEntry[]>([emptyExpenseEntry()]);
+  const [expenseResult, setExpenseResult] = useState<string | null>(null);
+
+  /* Deadline Tracker state */
+  const [deadlineEntries, setDeadlineEntries] = useState<DeadlineEntry[]>([emptyDeadlineEntry()]);
+  const [deadlineHtml, setDeadlineHtml] = useState<string | null>(null);
+
   const isAdmin = !!user;
   const hasWebhook = !!agent?.webhookUrl;
+  const isExpenseTracker = slug === "expense-tracker";
+  const isDeadlineTracker = slug === "deadline-tracker";
   const isRunning = triggerMutation.isPending || progressStep >= 0;
+  const isDone = isExpenseTracker ? expenseResult !== null : deadlineHtml !== null;
+
+  const progressSteps = isDeadlineTracker ? DEADLINE_STEPS : EXPENSE_STEPS;
+  const progressDelays = isDeadlineTracker ? DEADLINE_DELAYS : EXPENSE_DELAYS;
 
   function clearTimers() {
     timersRef.current.forEach(clearTimeout);
@@ -86,51 +161,74 @@ export default function AgentDetail() {
 
   useEffect(() => () => clearTimers(), []);
 
-  function updateEntry(index: number, field: keyof ExpenseEntry, value: string) {
-    setEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
-  }
-
-  function addEntry() {
-    setEntries(prev => [...prev, emptyEntry()]);
-  }
-
-  function removeEntry(index: number) {
-    setEntries(prev => prev.filter((_, i) => i !== index));
-  }
+  /* Reset panel state when slug changes */
+  useEffect(() => {
+    setPanelOpen(false);
+    setProgressStep(-1);
+    setRunError(null);
+    setExpenseResult(null);
+    setDeadlineHtml(null);
+    setExpenseEntries([emptyExpenseEntry()]);
+    setDeadlineEntries([emptyDeadlineEntry()]);
+    clearTimers();
+    triggerMutation.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   function resetForm() {
-    setEntries([emptyEntry()]);
     setProgressStep(-1);
-    setResult(null);
     setRunError(null);
+    setExpenseResult(null);
+    setDeadlineHtml(null);
+    setExpenseEntries([emptyExpenseEntry()]);
+    setDeadlineEntries([emptyDeadlineEntry()]);
     clearTimers();
     triggerMutation.reset();
   }
 
-  async function handleRun() {
-    if (!slug) return;
-    setRunError(null);
-    setResult(null);
+  function startProgress(delays: number[], steps: number) {
     setProgressStep(0);
-
     clearTimers();
-
-    STEP_DELAYS.forEach((delay, i) => {
+    delays.forEach((delay, i) => {
       if (i === 0) return;
       const t = setTimeout(() => {
         setProgressStep(prev => (prev < i && prev >= 0 ? i : prev));
       }, delay);
       timersRef.current.push(t);
     });
+    return steps;
+  }
+
+  async function handleRun() {
+    if (!slug) return;
+    setRunError(null);
+    setExpenseResult(null);
+    setDeadlineHtml(null);
+
+    const totalSteps = startProgress(progressDelays, progressSteps.length);
 
     try {
-      const data = await triggerMutation.mutateAsync({
-        slug,
-        data: { entries },
-      });
+      let entries: Record<string, string>[];
+      if (isDeadlineTracker) {
+        entries = deadlineEntries.map(e => ({
+          "Task": e.task,
+          "Last Date": e.lastDate,
+          "Piority": e.piority,
+          "Status": e.status,
+        }));
+      } else {
+        entries = expenseEntries as unknown as Record<string, string>[];
+      }
+
+      const data = await triggerMutation.mutateAsync({ slug, data: { entries } });
       clearTimers();
-      setProgressStep(PROGRESS_STEPS.length);
-      setResult({ summary: data.summary });
+      setProgressStep(totalSteps);
+
+      if (isDeadlineTracker) {
+        setDeadlineHtml(data.html ?? data.summary ?? "");
+      } else {
+        setExpenseResult(data.summary ?? "");
+      }
     } catch (err: unknown) {
       clearTimers();
       setProgressStep(-1);
@@ -139,7 +237,20 @@ export default function AgentDetail() {
     }
   }
 
-  const isDone = result !== null;
+  /* ── Expense entry helpers ── */
+  function updateExpenseEntry(index: number, field: keyof ExpenseEntry, value: string) {
+    setExpenseEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
+  }
+
+  /* ── Deadline entry helpers ── */
+  function updateDeadlineEntry(index: number, field: keyof DeadlineEntry, value: string) {
+    setDeadlineEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
+  }
+
+  /* ── Disable check ── */
+  const isSubmitDisabled = isDeadlineTracker
+    ? deadlineEntries.some(e => !e.task)
+    : expenseEntries.some(e => !e.amount || !e.description);
 
   if (isLoading) {
     return (
@@ -308,25 +419,64 @@ export default function AgentDetail() {
               </div>
 
               <div className="p-6">
-                {/* ── Result state ── */}
-                {isDone ? (
+                {/* ── Error state ── */}
+                {runError ? (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                    <div className="flex items-center gap-2 text-destructive text-sm font-mono">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Something went wrong. Check n8n and try again.</span>
+                    </div>
+                    <div className="text-xs text-destructive/80 font-mono bg-destructive/5 border border-destructive/20 rounded p-3">
+                      {runError}
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2"
+                      onClick={resetForm}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Retry
+                    </Button>
+                  </motion.div>
+
+                ) : isDone ? (
+                  /* ── Result state ── */
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     <div className="flex items-center gap-2 text-green-400 text-sm font-mono mb-4">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Workflow complete</span>
-                      <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
-                        <Mail className="w-3 h-3" /> Email sent
-                      </span>
+                      {isDeadlineTracker ? (
+                        <span className="flex items-center gap-1.5 bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full text-xs">
+                          <Mail className="w-3 h-3" /> Email sent to Shivamthakur6888@gmail.com
+                        </span>
+                      ) : (
+                        <>
+                          <span>Workflow complete</span>
+                          <span className="flex items-center gap-1 ml-3 text-xs bg-green-400/10 border border-green-400/20 text-green-400 px-2 py-0.5 rounded-full">
+                            <Mail className="w-3 h-3" /> Email sent
+                          </span>
+                        </>
+                      )}
                     </div>
 
-                    <div className="bg-background/60 border border-border/50 rounded-lg p-5">
-                      <div className="text-xs text-primary/70 font-mono uppercase mb-3 flex items-center gap-1.5">
-                        <Zap className="w-3 h-3" /> AI-Generated Summary
+                    {isDeadlineTracker && deadlineHtml ? (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-mono uppercase mb-2">Email Preview</div>
+                        <div className="rounded-lg overflow-hidden border border-border/50">
+                          <div
+                            className="bg-white text-black overflow-auto max-h-[500px] p-4 text-sm"
+                            dangerouslySetInnerHTML={{ __html: deadlineHtml }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-mono">
-                        {result.summary}
+                    ) : (
+                      <div className="bg-background/60 border border-border/50 rounded-lg p-5">
+                        <div className="text-xs text-primary/70 font-mono uppercase mb-3 flex items-center gap-1.5">
+                          <Zap className="w-3 h-3" /> AI-Generated Summary
+                        </div>
+                        <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-mono">
+                          {expenseResult}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <Button
                       variant="outline"
@@ -339,55 +489,120 @@ export default function AgentDetail() {
 
                 ) : progressStep >= 0 ? (
                   /* ── Progress state ── */
-                  <div className="space-y-3">
-                    {PROGRESS_STEPS.map((step, i) => {
-                      const isActive = i === progressStep || (progressStep >= PROGRESS_STEPS.length && i === PROGRESS_STEPS.length - 1);
-                      const isDoneStep = i < progressStep || progressStep >= PROGRESS_STEPS.length;
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: isDoneStep || isActive ? 1 : 0.3, x: 0 }}
-                          className="flex items-center gap-3 text-sm"
-                        >
-                          {isDoneStep ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-                          ) : isActive ? (
-                            <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border border-border/50 flex-shrink-0" />
-                          )}
-                          <span className={cn(
-                            "font-mono",
-                            isDoneStep ? "text-muted-foreground line-through" : isActive ? "text-primary" : "text-muted-foreground/40"
-                          )}>
-                            {step}
-                          </span>
-                        </motion.div>
-                      );
-                    })}
+                  <ProgressStepper steps={progressSteps} currentStep={progressStep} />
+
+                ) : isDeadlineTracker ? (
+                  /* ── Deadline Tracker form ── */
+                  <div className="space-y-6">
+                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">
+                      Task Entries
+                    </div>
+
+                    <div className="space-y-4">
+                      {deadlineEntries.map((entry, index) => (
+                        <div key={index} className="bg-background/40 border border-border/40 rounded-lg p-4 space-y-3 relative">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                              Task {index + 1} of {deadlineEntries.length}
+                            </span>
+                            {deadlineEntries.length > 1 && (
+                              <button
+                                onClick={() => setDeadlineEntries(prev => prev.filter((_, i) => i !== index))}
+                                className="text-muted-foreground/40 hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block font-mono">Task</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Submit quarterly report"
+                              value={entry.task}
+                              onChange={e => updateDeadlineEntry(index, "task", e.target.value)}
+                              className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block font-mono">Last Date</label>
+                            <input
+                              type="date"
+                              value={entry.lastDate}
+                              onChange={e => updateDeadlineEntry(index, "lastDate", e.target.value)}
+                              style={{ colorScheme: "dark" }}
+                              className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block font-mono">Piority</label>
+                              <select
+                                value={entry.piority}
+                                onChange={e => updateDeadlineEntry(index, "piority", e.target.value)}
+                                className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
+                              >
+                                {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block font-mono">Status</label>
+                              <select
+                                value={entry.status}
+                                onChange={e => updateDeadlineEntry(index, "status", e.target.value)}
+                                className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
+                              >
+                                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border/50 text-muted-foreground hover:text-foreground gap-1.5 text-xs"
+                      onClick={() => setDeadlineEntries(prev => [...prev, emptyDeadlineEntry()])}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Task
+                    </Button>
+
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        className="w-full gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
+                        onClick={handleRun}
+                        disabled={isRunning || isSubmitDisabled}
+                      >
+                        <Play className="w-4 h-4" /> Run Agent
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground font-mono text-center mt-2">
+                        Tasks will be saved to Google Sheets, analysed by AI, and a digest will be emailed.
+                      </p>
+                    </div>
                   </div>
 
                 ) : (
-                  /* ── Form state ── */
+                  /* ── Expense Tracker form ── */
                   <div className="space-y-6">
                     <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">
                       Expense Entries
                     </div>
 
                     <div className="space-y-4">
-                      {entries.map((entry, index) => (
-                        <div
-                          key={index}
-                          className="bg-background/40 border border-border/40 rounded-lg p-4 space-y-3 relative group"
-                        >
+                      {expenseEntries.map((entry, index) => (
+                        <div key={index} className="bg-background/40 border border-border/40 rounded-lg p-4 space-y-3 relative group">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-mono text-muted-foreground uppercase">
                               Entry {(index + 1).toString().padStart(2, "0")}
                             </span>
-                            {entries.length > 1 && (
+                            {expenseEntries.length > 1 && (
                               <button
-                                onClick={() => removeEntry(index)}
+                                onClick={() => setExpenseEntries(prev => prev.filter((_, i) => i !== index))}
                                 className="text-muted-foreground/40 hover:text-destructive transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -402,7 +617,7 @@ export default function AgentDetail() {
                                 type="text"
                                 placeholder="e.g. 850"
                                 value={entry.amount}
-                                onChange={e => updateEntry(index, "amount", e.target.value)}
+                                onChange={e => updateExpenseEntry(index, "amount", e.target.value)}
                                 className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 font-mono"
                               />
                             </div>
@@ -411,7 +626,7 @@ export default function AgentDetail() {
                               <input
                                 type="date"
                                 value={entry.date}
-                                onChange={e => updateEntry(index, "date", e.target.value)}
+                                onChange={e => updateExpenseEntry(index, "date", e.target.value)}
                                 style={{ colorScheme: "dark" }}
                                 className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
                               />
@@ -422,7 +637,7 @@ export default function AgentDetail() {
                             <label className="text-xs text-muted-foreground mb-1 block font-mono">Category</label>
                             <select
                               value={entry.category}
-                              onChange={e => updateEntry(index, "category", e.target.value)}
+                              onChange={e => updateExpenseEntry(index, "category", e.target.value)}
                               className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono"
                             >
                               {EXPENSE_CATEGORIES.map(cat => (
@@ -437,7 +652,7 @@ export default function AgentDetail() {
                               type="text"
                               placeholder="e.g. Team lunch, Office stationery..."
                               value={entry.description}
-                              onChange={e => updateEntry(index, "description", e.target.value)}
+                              onChange={e => updateExpenseEntry(index, "description", e.target.value)}
                               className="w-full bg-card border border-border/50 rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50"
                             />
                           </div>
@@ -445,28 +660,20 @@ export default function AgentDetail() {
                       ))}
                     </div>
 
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-border/50 text-muted-foreground hover:text-foreground gap-1.5 text-xs"
-                        onClick={addEntry}
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Another Entry
-                      </Button>
-                    </div>
-
-                    {runError && (
-                      <div className="text-xs text-destructive font-mono bg-destructive/5 border border-destructive/20 rounded p-3">
-                        {runError}
-                      </div>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border/50 text-muted-foreground hover:text-foreground gap-1.5 text-xs"
+                      onClick={() => setExpenseEntries(prev => [...prev, emptyExpenseEntry()])}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Another Entry
+                    </Button>
 
                     <div className="pt-2 border-t border-border/40">
                       <Button
                         className="w-full gap-2 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
                         onClick={handleRun}
-                        disabled={entries.some(e => !e.amount || !e.description)}
+                        disabled={isRunning || isSubmitDisabled}
                       >
                         <Play className="w-4 h-4" /> Run Agent
                       </Button>

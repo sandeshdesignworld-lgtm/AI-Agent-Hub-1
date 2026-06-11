@@ -37,20 +37,16 @@ export interface AgentDetail {
   webhookUrl?: string | null;
 }
 
-export interface ExpenseEntry {
-  amount: string;
-  category: string;
-  description: string;
-  date: string;
-}
+export type AgentTriggerInputEntriesItem = { [key: string]: unknown };
 
 export interface AgentTriggerInput {
-  entries: ExpenseEntry[];
+  entries: AgentTriggerInputEntriesItem[];
 }
 
 export interface AgentTriggerResult {
   success: boolean;
-  summary: string;
+  summary?: string | null;
+  html?: string | null;
 }
 
 export interface AdminCredentials {

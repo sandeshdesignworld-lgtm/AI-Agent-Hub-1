@@ -241,19 +241,6 @@ components:
           type: string
           nullable: true
 
-    ExpenseEntry:
-      type: object
-      required: [amount, category, description, date]
-      properties:
-        amount:
-          type: string
-        category:
-          type: string
-        description:
-          type: string
-        date:
-          type: string
-
     AgentTriggerInput:
       type: object
       required: [entries]
@@ -261,16 +248,21 @@ components:
         entries:
           type: array
           items:
-            $ref: "#/components/schemas/ExpenseEntry"
+            type: object
+            additionalProperties: true
 
     AgentTriggerResult:
       type: object
-      required: [success, summary]
+      required: [success]
       properties:
         success:
           type: boolean
         summary:
           type: string
+          nullable: true
+        html:
+          type: string
+          nullable: true
 
     AdminCredentials:
       type: object

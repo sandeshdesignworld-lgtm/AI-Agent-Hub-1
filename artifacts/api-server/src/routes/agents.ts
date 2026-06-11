@@ -70,25 +70,47 @@ router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  req.log.info({ slug: params.data.slug, entries: body.data.entries.length }, "Triggering agent webhook");
+  const slug = params.data.slug;
+  req.log.info({ slug, entries: body.data.entries.length }, "Triggering agent webhook");
 
-  const webhookResponse = await fetch(agent.webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries: body.data.entries }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
-  if (!webhookResponse.ok) {
-    const text = await webhookResponse.text();
-    req.log.error({ status: webhookResponse.status, body: text }, "Webhook returned error");
-    res.status(502).json({ error: `Webhook error: ${webhookResponse.status}` });
-    return;
+  try {
+    const webhookResponse = await fetch(agent.webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entries: body.data.entries }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!webhookResponse.ok) {
+      const text = await webhookResponse.text();
+      req.log.error({ status: webhookResponse.status, body: text }, "Webhook returned error");
+      res.status(502).json({ error: `Webhook error: ${webhookResponse.status}` });
+      return;
+    }
+
+    const responseText = await webhookResponse.text();
+    req.log.info({ slug }, "Webhook response received");
+
+    if (slug === "deadline-tracker") {
+      res.json({ success: true, html: responseText });
+    } else {
+      res.json({ success: true, summary: responseText });
+    }
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      req.log.error({ slug }, "Webhook timed out after 60s");
+      res.status(504).json({ error: "Webhook timed out after 60 seconds" });
+    } else {
+      req.log.error({ err, slug }, "Webhook request failed");
+      res.status(502).json({ error: "Webhook request failed" });
+    }
   }
-
-  const responseText = await webhookResponse.text();
-  req.log.info({ slug: params.data.slug }, "Webhook response received");
-
-  res.json({ success: true, summary: responseText });
 });
 
 export default router;

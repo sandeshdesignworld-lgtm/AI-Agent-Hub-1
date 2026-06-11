@@ -5,8 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ExpenseEntry } from './expenseEntry';
+import type { AgentTriggerInputEntriesItem } from './agentTriggerInputEntriesItem';
 
 export interface AgentTriggerInput {
-  entries: ExpenseEntry[];
+  entries: AgentTriggerInputEntriesItem[];
 }

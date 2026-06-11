@@ -8,5 +8,6 @@
 
 export interface AgentTriggerResult {
   success: boolean;
-  summary: string;
+  summary?: string | null;
+  html?: string | null;
 }

@@ -42,29 +42,30 @@ const agents = [
   {
     slug: "deadline-tracker",
     name: "Deadline Tracker",
-    shortDescription: "Never miss a critical deadline — AI monitors tasks, sends smart alerts, and reprioritizes automatically.",
+    shortDescription: "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
     description:
-      "The Deadline Tracker Agent is your personal project management co-pilot. It monitors all your tasks and commitments across platforms, calculates risk scores for upcoming deadlines, and dynamically adjusts your priorities based on workload, dependencies, and urgency. It proactively notifies you when a deadline is at risk before it becomes a crisis.",
+      "The Deadline Tracker Agent is an n8n-powered workflow that connects to your Google Sheets task repository. On demand, it reads all pending tasks, applies AI classification to group them as Today, Upcoming, or Overdue, and compiles a richly formatted HTML digest email delivered directly to your inbox. It turns a flat spreadsheet of tasks into an intelligent, actionable briefing.",
     howItWorks:
-      "The agent ingests tasks from integrated tools (Jira, Asana, Notion, email, calendar). It builds a dependency graph, assigns risk scores based on complexity and time remaining, and sends escalating alerts as deadlines approach. When conflicts arise, it suggests re-scheduling options and can auto-delegate low-priority items.",
+      "1. A webhook trigger receives task entries and saves them to the connected Google Sheets task repository.\n2. The workflow fetches all tasks and filters by pending status.\n3. Entries are aggregated and passed to the AI classification engine.\n4. AI classifies each task as Today, Upcoming, or Overdue based on the Last Date field.\n5. A formatted HTML digest email is generated with categorized task sections.\n6. The email is delivered to the configured inbox via Gmail, and the HTML is returned as an API response for preview in the admin panel.",
     requirements:
-      "Task list with deadlines and estimated effort, integration with at least one project management tool or calendar, notification preferences (email, Slack, SMS).",
+      "Google Sheets Task Repository\nTask Entry Collection (Task, Last Date, Piority, Status)\nAI Deadline Classification Engine\nToday / Upcoming / Overdue Categorization Logic\nEmail Digest Template\nGmail Delivery Integration\nAdmin Webhook Access\nn8n Workflow Orchestration",
     expectedOutput:
-      "Daily priority briefing, real-time deadline risk dashboard, conflict detection reports, automated reminder sequences, workload balance recommendations.",
+      "• All pending tasks fetched and classified by deadline urgency\n• Tasks grouped into Today, Upcoming, and Overdue sections\n• Priority labels (High / Medium / Low) preserved in the digest\n• Formatted HTML email with clear task sections and styling\n• Email delivered to Shivamthakur6888@gmail.com on demand\n• HTML email preview returned as API response for admin panel\n• Overdue tasks highlighted for immediate attention\n• Task count summary per category included in digest",
     sampleExamples: [
       {
-        title: "Weekly Priority Briefing",
-        input: "What are my most critical deadlines this week?",
+        title: "Deadline Digest Email",
+        input: "Tasks submitted: Submit quarterly report (High, 2026-06-15, Pending), Review vendor contract (Medium, 2026-06-11, Pending), Update project docs (Low, 2026-06-20, Pending).",
         output:
-          "CRITICAL (next 24h): Client proposal due tomorrow 9AM — 60% complete, needs 4 more hours. HIGH: Q2 report due Friday — on track. MEDIUM: Team review meeting prep (Thursday). Recommendation: Block 2-3pm today for proposal. You have a scheduling conflict Wednesday — 3 overlapping meetings.",
+          "📬 Deadline Digest\n\n🔴 TODAY\n• Review vendor contract — High priority (due 2026-06-11)\n\n🟡 UPCOMING\n• Submit quarterly report — High priority (due 2026-06-15)\n• Update project docs — Low priority (due 2026-06-20)\n\n✅ No overdue tasks.\n\nEmail delivered to Shivamthakur6888@gmail.com.",
       },
       {
-        title: "Deadline Conflict Resolution",
-        input: "I just got a new urgent task due in 2 days but I already have 3 things due then.",
+        title: "Overdue Task Alert",
+        input: "Tasks with past deadlines detected: Fix login bug (High, 2026-06-08, Pending), Send invoice (Medium, 2026-06-09, Pending).",
         output:
-          "Conflict detected. Current Wednesday load: 14 estimated hours for 4 tasks. Recommendation: (1) Delegate the internal report to Sarah — she has capacity. (2) Request 1-day extension on the vendor response. (3) Start new urgent task immediately. Revised plan reduces Wednesday load to 9 hours. Shall I send the delegation request?",
+          "⚠️ Overdue Task Alert\n\n🔴 OVERDUE\n• Fix login bug — High priority (was due 2026-06-08)\n• Send invoice — Medium priority (was due 2026-06-09)\n\nImmediate action required on 2 overdue tasks.\n\nEmail digest sent to Shivamthakur6888@gmail.com.",
       },
     ],
+    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/deadline-tracker",
     order: 2,
   },
   {
