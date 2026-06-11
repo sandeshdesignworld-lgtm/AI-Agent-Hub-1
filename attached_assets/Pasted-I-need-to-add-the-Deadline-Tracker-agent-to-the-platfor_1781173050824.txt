@@ -1,0 +1,89 @@
+I need to add the Deadline Tracker agent to the platform, following the exact same pattern as the Expense Tracker agent. Here's everything:
+
+## Context
+- n8n webhook URL for Deadline Tracker: YOUR_N8N_WEBHOOK_URL
+- The agent slug is: deadline-tracker
+- Email output goes to: Shivamthakur6888@gmail.com
+- The existing trigger route is: POST /api/agents/:slug/trigger (already built for expense-tracker)
+
+## 1. Backend: Add deadline-tracker to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a new case for slug === "deadline-tracker":
+- Forward the request body to the Deadline Tracker n8n webhook URL above
+- The request body format sent to n8n should be:
+  {
+    "entries": [
+      {
+        "Task": "Submit quarterly report",
+        "Last Date": "2026-06-15",
+        "Piority": "High",
+        "Status": "Pending"
+      }
+    ]
+  }
+- Note: the field is spelled "Piority" (not Priority) — this must match the Google Sheet column name exactly
+- Wait for n8n response (60 second timeout) and return it as JSON
+- The webhook response will contain an HTML email string — return it as-is
+
+Also update the seed data for the deadline-tracker agent:
+- Name: "Deadline Tracker"
+- Slug: "deadline-tracker"  
+- Description: "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand."
+- webhookUrl: YOUR_N8N_WEBHOOK_URL
+
+## 2. Frontend: Build the Deadline Tracker workspace panel
+
+When the user clicks "Deadline Tracker" in the admin sidebar, replace the "Coming Soon" placeholder with this UI. Follow the exact same dark theme, cyan/teal accents, and component structure used in the Expense Tracker workspace.
+
+### Phase 1 — Input Form
+
+Show a form to add task entries before triggering the workflow. The form has these exact fields per entry:
+
+1. **Task** — text input, required, placeholder "e.g. Submit quarterly report"
+2. **Last Date** — date picker, required, defaults to tomorrow
+3. **Piority** — dropdown (note the spelling), options: High, Medium, Low
+4. **Status** — dropdown, options: Pending, In Progress, Completed — default to "Pending"
+
+Multi-entry support (same as expense tracker):
+- Start with 1 entry visible
+- "+ Add Task" button adds another entry row
+- Each row has a "×" remove button (can't remove if only 1 row remains)
+- Show entry count "Task 1 of N" on each row
+
+At the bottom:
+- "Run Agent" button (cyan, full width) that submits all entries
+- Small note below the button: "Tasks will be saved to Google Sheets, analysed by AI, and a digest will be emailed."
+
+### Phase 2 — Progress Steps (shown while waiting for webhook response)
+
+Animate through these steps one by one (~2 seconds each) while waiting for the n8n response. Use the exact same vertical stepper UI with checkmarks and pulsing indicator as Expense Tracker:
+
+1. "Saving tasks to Google Sheets..." 
+2. "Fetching all pending tasks..."
+3. "Filtering by status..."
+4. "Aggregating task data..."
+5. "AI classifying deadlines (Today / Upcoming / Overdue)..."
+6. "Generating email digest..."
+7. "Sending email to Shivamthakur6888@gmail.com..."
+
+### Phase 3 — Output Display (shown when webhook responds)
+
+When the response arrives:
+- Show a "✓ Email sent to Shivamthakur6888@gmail.com" green badge at the top
+- Display the HTML email output in an iframe or a sanitized HTML block below — the response is a full Gmail-safe HTML email, render it inside a white-background scrollable container styled to look like an email preview card
+- The card should have a label above it: "Email Preview" in small muted text
+- Add a "Run Again" button below to reset back to Phase 1
+
+### Error handling
+- If webhook returns an error or times out after 60 seconds, show an error state with: "Something went wrong. Check n8n and try again." with a Retry button.
+
+## 3. Sidebar nav
+Make sure "Deadline Tracker" appears in the admin sidebar nav list (same as Expense Tracker). If agents are loaded dynamically from the DB/API, this should happen automatically once the seed data is updated. If not, add it explicitly.
+
+## 4. Do not change
+- The overall layout, sidebar, header
+- The Expense Tracker implementation
+- Any other agents' workspaces
+- Auth flow
+
+Match the dark theme exactly — same background colors, same cyan (#00BCD4 or whatever the existing primary is), same font stack, same button styles, same stepper animation as Expense Tracker.
