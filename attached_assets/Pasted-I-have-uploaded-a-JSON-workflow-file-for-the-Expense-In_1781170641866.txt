@@ -1,0 +1,45 @@
+I have uploaded a JSON workflow file for the Expense Intelligence Agent.
+
+Your task is to:
+
+1. Read and analyze the uploaded JSON workflow completely.
+2. Understand what the workflow actually does by examining the triggers, integrations, logic, AI prompts, outputs, and automations.
+3. Update the existing Expense Tracker agent page so that all content accurately reflects the real workflow functionality.
+4. Replace all placeholder or dummy content with the finalized content provided in the uploaded PDF.
+5. Preserve the existing UI design, layout, styling, spacing, animations, icons, and component structure.
+6. Only update content-related fields.
+
+Map the PDF content to the following sections:
+
+- Agent Name
+- Agent ID
+- Hero Tagline
+- Overview
+- System Requirements
+- Operational Protocol
+  - How It Works
+  - Expected Output
+- Output Samples
+- Agent Card Description
+- Agent Tags
+- Sidebar Requirements List
+
+Requirements:
+
+- Do not modify the page design.
+- Do not create new sections.
+- Do not create new components.
+- Do not alter routing or functionality.
+- Use the content exactly as provided in the PDF.
+- Ensure the content accurately represents the uploaded JSON workflow.
+- Maintain existing formatting for paragraphs, bullet points, sample outputs, and lists.
+- If content is stored in JSON, TypeScript, JavaScript, React components, data files, or configuration files, update the correct source files accordingly.
+- Ensure the Agent Library card content is updated to match the detail page content.
+- Verify that the agent is represented as an "Expense Intelligence Agent" focused on weekly expense analysis, spending insights, category breakdowns, AI-generated summaries, and automated email reporting.
+
+After completing the update:
+
+1. List all modified files.
+2. Explain what was changed in each file.
+3. Confirm that all Expense Tracker placeholder content has been replaced with the new Expense Intelligence Agent content.
+4. Verify that no UI or functionality changes were made.
