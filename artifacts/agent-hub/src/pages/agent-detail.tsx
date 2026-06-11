@@ -15,10 +15,12 @@ import { cn } from "@/lib/utils";
 
 const AGENT_ID_DISPLAY: Record<string, string> = {
   "hr-agent": "HR-ATS-001",
+  "expense-tracker": "FIN-EXP-001",
 };
 
 const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
   "hr-agent": "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
+  "expense-tracker": "Automatically analyzes weekly spending, identifies financial patterns, and delivers AI-generated expense reports directly to your inbox.",
 };
 
 const EXPENSE_CATEGORIES = [

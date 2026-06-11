@@ -22,7 +22,7 @@ const AGENT_META: Record<string, {
   "expense-tracker": {
     category: "Finance",
     status: "Details Available",
-    tags: ["Expense Categorization", "Spending Summary", "Reports"],
+    tags: ["Expense Analytics", "Financial Reporting", "Spending Insights"],
     icon: <DollarSign className="w-5 h-5" />,
   },
   "deadline-tracker": {
