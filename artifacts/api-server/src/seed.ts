@@ -63,28 +63,43 @@ const agents = [
   },
   {
     slug: "hr-agent",
-    name: "HR Agent",
-    shortDescription: "Streamline HR operations — from onboarding to performance reviews — with intelligent automation.",
+    name: "AI Resume Screening Agent",
+    shortDescription: "ATS-powered recruitment assistant that evaluates AI candidates, scores resumes, automates shortlisting, and triggers interview workflows.",
     description:
-      "The HR Agent is a comprehensive human resources assistant that automates routine HR workflows, answers employee queries 24/7, processes leave requests, assists with onboarding, and provides HR analytics to management. It ensures compliance, reduces administrative burden, and improves employee experience.",
+      "The AI Resume Screening Agent automates the initial candidate evaluation process for AI and machine learning roles. The system analyzes resumes, extracts candidate information, evaluates qualifications against predefined hiring criteria, and generates structured hiring recommendations.\n\nBy eliminating manual resume screening, recruiters can quickly identify high-potential candidates while maintaining a consistent and objective evaluation process across every application.",
     howItWorks:
-      "The agent integrates with your HRIS system, learns your company policies, and handles HR interactions through a conversational interface. It processes requests, routes complex issues to HR staff, generates reports, and maintains an audit trail of all actions.",
+      "The agent receives candidate resumes and extracts relevant information including contact details, education, experience, location, and AI-related skills.\n\nEach candidate is automatically evaluated against a predefined scoring model that measures:\n• AI/ML educational background\n• LLM experience\n• RAG experience\n• Chatbot development experience\n• Agentic AI experience\n• Generative AI exposure\n• Professional experience level\n• Geographic eligibility\n• Relocation flexibility\n\nAfter scoring, the system assigns a hiring recommendation and routes candidates into appropriate recruitment pipelines.",
     requirements:
-      "Company HR policy documents, HRIS integration (BambooHR, Workday, etc.), employee directory, leave policy configuration, and role-based access setup.",
+      "Resume Upload Capability\nOpenAI GPT Integration\nGoogle Sheets Database\nCandidate Evaluation Framework\nRecruitment Workflow Configuration\nAutomated Email Integration\nATS Scoring Logic\nHiring Decision Thresholds",
     expectedOutput:
-      "Automated leave approvals/rejections, onboarding checklists, policy Q&A responses, HR analytics dashboards, compliance reports, and employee satisfaction metrics.",
+      "The agent produces:\n• Candidate profile extraction\n• Contact information identification\n• AI skills assessment\n• Experience evaluation\n• Qualification scorecard\n• ATS compatibility score\n• Hiring recommendation\n• Candidate classification\n• Recruitment tracking records\n• Automated interview invitations",
     sampleExamples: [
       {
-        title: "Leave Request Processing",
-        input: "I need to take 5 days off next week for a family emergency.",
-        output:
-          "Leave request received. Checking your balance: You have 12 remaining PTO days. Checking team calendar: 2 colleagues are already on leave next week but coverage is available. Status: APPROVED. Your manager has been notified. HR record updated. Return date: following Monday. Is there anything else you need help with?",
+        title: "Resume Evaluation Result",
+        input: "Candidate resume submitted for evaluation: B.Tech Artificial Intelligence graduate with LLM, RAG, Agent, and GenAI keywords detected.",
+        output: JSON.stringify({
+          candidate_name: "Rahul Sharma",
+          degree_detected: "B.Tech Artificial Intelligence",
+          keywords_hit: ["LLM", "RAG", "Agent", "GenAI"],
+          total_score: 82,
+          status: "Shortlisted"
+        }, null, 2),
       },
       {
-        title: "Onboarding Assistance",
-        input: "I'm starting next Monday. What do I need to do to prepare?",
-        output:
-          "Welcome! Your onboarding checklist: Pre-start (this week): Complete digital paperwork (link sent), set up 2FA for company email. Day 1: IT orientation 9AM, meet your buddy mentor 11AM, team lunch 12PM. Week 1: 8 required training modules (estimated 4 hours). I've scheduled your first 5 meetings and ordered your equipment. Any questions?",
+        title: "Candidate Assessment (Scored 78 / Shortlisted)",
+        input: "Resume contains:\n• 3 years AI experience\n• RAG applications\n• LLM projects\n• Mumbai location",
+        output: JSON.stringify({
+          total_score: 78,
+          status: "Shortlisted"
+        }, null, 2),
+      },
+      {
+        title: "Candidate Assessment (Scored 28 / Rejected)",
+        input: "Resume contains:\n• General software background\n• No AI projects\n• No GenAI experience",
+        output: JSON.stringify({
+          total_score: 28,
+          status: "Rejected"
+        }, null, 2),
       },
     ],
     order: 3,

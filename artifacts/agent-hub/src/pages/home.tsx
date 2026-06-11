@@ -34,7 +34,7 @@ const AGENT_META: Record<string, {
   "hr-agent": {
     category: "HR",
     status: "Details Available",
-    tags: ["Onboarding", "HR Q&A", "Recruitment"],
+    tags: ["Resume Screening", "ATS Automation", "AI Recruitment"],
     icon: <Users className="w-5 h-5" />,
   },
   "appointment-booking": {

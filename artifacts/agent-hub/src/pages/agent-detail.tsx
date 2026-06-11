@@ -13,6 +13,14 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 
+const AGENT_ID_DISPLAY: Record<string, string> = {
+  "hr-agent": "HR-ATS-001",
+};
+
+const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
+  "hr-agent": "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
+};
+
 const EXPENSE_CATEGORIES = [
   "Food", "Transport", "Utilities", "Entertainment",
   "Shopping", "Office Supplies", "Healthcare", "Education", "Other",
@@ -175,10 +183,10 @@ export default function AgentDetail() {
               </div>
               <div>
                 <h1 className="text-4xl font-display font-bold text-foreground">{agent.name}</h1>
-                <p className="text-sm font-mono text-primary">ID_REF: {agent.slug.toUpperCase()}</p>
+                <p className="text-sm font-mono text-primary">ID_REF: {AGENT_ID_DISPLAY[agent.slug] ?? agent.slug.toUpperCase()}</p>
               </div>
             </div>
-            <p className="text-xl text-muted-foreground max-w-2xl">{agent.shortDescription}</p>
+            <p className="text-xl text-muted-foreground max-w-2xl">{AGENT_TAGLINE_DISPLAY[agent.slug] ?? agent.shortDescription}</p>
           </div>
         </div>
 
@@ -203,7 +211,7 @@ export default function AgentDetail() {
                 </div>
                 <div>
                   <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Expected Output</h3>
-                  <p className="text-foreground leading-relaxed">{agent.expectedOutput}</p>
+                  <p className="text-foreground leading-relaxed whitespace-pre-wrap">{agent.expectedOutput}</p>
                 </div>
               </div>
             </section>
