@@ -46,7 +46,7 @@ const AGENT_META: Record<string, {
   "customer-support": {
     category: "Support",
     status: "Details Available",
-    tags: ["FAQ", "Tickets", "Escalation"],
+    tags: ["Customer Support", "Email Automation", "Help Desk"],
     icon: <MessageSquare className="w-5 h-5" />,
   },
   "campus-concierge": {
@@ -94,7 +94,7 @@ const PURPOSE_CARDS = [
 
 const SIDEBAR_PREVIEW = [
   "Dashboard", "Expense Tracker", "Deadline Tracker",
-  "HR Agent", "Appointment Booking", "Customer Support",
+  "HR Agent", "Appointment Booking", "Help Desk Agent",
 ];
 
 export default function Home() {

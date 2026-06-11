@@ -17,12 +17,14 @@ const AGENT_ID_DISPLAY: Record<string, string> = {
   "hr-agent": "HR-ATS-001",
   "expense-tracker": "FIN-EXP-001",
   "deadline-tracker": "DL-TRK-001",
+  "customer-support": "CS-CARE-001",
 };
 
 const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
   "hr-agent": "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
   "expense-tracker": "Automatically analyzes weekly spending, identifies financial patterns, and delivers AI-generated expense reports directly to your inbox.",
   "deadline-tracker": "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
+  "customer-support": "Automatically understands customer inquiries, routes them intelligently, and delivers professional support responses in real time.",
 };
 
 /* ── Expense Tracker constants ── */

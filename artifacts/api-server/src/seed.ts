@@ -147,28 +147,34 @@ const agents = [
   },
   {
     slug: "customer-support",
-    name: "Customer Support",
-    shortDescription: "24/7 AI support agent that resolves tickets, escalates intelligently, and learns from every interaction.",
+    name: "Help Desk Agent",
+    shortDescription: "AI-powered customer support assistant that classifies inquiries, retrieves relevant information, and automatically generates professional email responses.",
     description:
-      "The Customer Support Agent provides instant, intelligent customer service across all channels — chat, email, and social media. It resolves common issues autonomously, escalates complex cases to human agents with full context, and continuously improves through feedback loops. It maintains brand voice consistency and tracks satisfaction metrics.",
+      "The Help Desk Agent is an AI-powered support assistant designed to streamline customer communication and improve response times. By monitoring incoming emails, understanding customer intent, and generating context-aware replies, the agent ensures every inquiry receives timely and professional attention.\nWhether customers have billing questions, product-related concerns, or general inquiries, the agent intelligently categorizes requests and provides appropriate responses while maintaining a consistent support experience.",
     howItWorks:
-      "The agent monitors all support channels, classifies incoming tickets by urgency and category, resolves tier-1 issues automatically using your knowledge base, and routes tier-2/3 issues to the right human agent with a full context summary. It learns from resolutions to improve future accuracy.",
+      "The agent continuously monitors incoming customer emails and analyzes each message using AI-powered intent detection.\nBased on the content of the email, the system automatically categorizes inquiries into billing and financial questions, product-related concerns, or general support requests. For specialized inquiries, the agent retrieves relevant information from connected knowledge sources and generates an accurate, professional response.\nThe completed response is then automatically delivered to the customer via email, ensuring consistent communication and reduced support workload.",
     requirements:
-      "Product knowledge base and FAQ documentation, integration with support platform (Zendesk, Intercom, Freshdesk), escalation workflow definition, brand voice guidelines.",
+      "Gmail integration\nIncoming email monitoring\nCustomer support knowledge base\nFinancial policy knowledge repository\nProduct support documentation\nOpenAI language model access\nAutomated email response system\nCustomer communication workflows",
     expectedOutput:
-      "Instant ticket responses, automated issue resolution for common problems, escalation summaries with full context, CSAT scores, resolution time metrics, and knowledge gap reports.",
+      "The Help Desk Agent generates:\n• Automated customer email responses\n• Billing and refund assistance\n• Product support acknowledgments\n• General inquiry responses\n• Customer issue classification\n• Knowledge-based support answers\n• Professional email communications\n• Support request routing\n• AI-generated customer assistance\n• Consistent brand-aligned responses",
     sampleExamples: [
       {
-        title: "Password Reset Request",
-        input: "I can't log into my account, I've forgotten my password.",
+        title: "Billing Inquiry",
+        input: "I cancelled my subscription and would like to know when my refund will be processed.",
         output:
-          "No problem! I've sent a password reset link to your registered email (j***@gmail.com). The link expires in 30 minutes. If you don't see it, check spam or let me know. If you no longer have access to that email, I can verify your identity another way. Is there anything else I can help you with today?",
+          "Hello Rahul,\n\nThank you for reaching out.\n\nRefunds for eligible cancelled subscriptions are typically processed within 5–7 business days after confirmation. Once the refund has been initiated, you will receive a confirmation email with additional details.\n\nPlease let us know if you have any further questions.\n\nBest regards,\nTechNEo Solutions Support Team",
       },
       {
-        title: "Complex Billing Dispute",
-        input: "I was charged twice for my subscription this month.",
+        title: "Product Support Request",
+        input: "I'm unable to connect your platform with Slack. Is there an issue with the integration?",
         output:
-          "I'm sorry about the double charge. I can see 2 charges of $49.99 on March 15 and March 16 on your account. This appears to be a system error. I'm escalating this to our billing team with HIGH priority. They will process a refund within 2 business days. Reference #: SUP-2024-8847. You'll receive email confirmation once resolved. I've also added a $10 credit to your account for the inconvenience.",
+          "Hello,\n\nThank you for contacting us.\n\nWe understand you are experiencing an issue with the Slack integration. Our technical support team has been notified and will investigate the matter. A specialist will reach out within 24 hours to assist further.\n\nBest regards,\nTechNEo Solutions Support Team",
+      },
+      {
+        title: "General Inquiry",
+        input: "I would like to learn more about your enterprise offerings.",
+        output:
+          "Hello,\n\nThank you for your interest in our services.\n\nYour inquiry has been forwarded to the appropriate team, and someone will be in touch shortly with additional information regarding our enterprise solutions.\n\nBest regards,\nTechNEo Solutions Support Team",
       },
     ],
     order: 5,
