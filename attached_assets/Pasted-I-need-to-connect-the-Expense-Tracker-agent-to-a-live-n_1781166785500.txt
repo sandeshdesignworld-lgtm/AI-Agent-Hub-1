@@ -1,0 +1,43 @@
+I need to connect the Expense Tracker agent to a live n8n workflow. Here's what needs to change:
+Context:
+* The n8n webhook URL is: https://n8n.srv1042888.hstgr.cloud/webhook/expense-tracker
+* The Google Sheet columns are: 
+Timestamp	Enter Amount	Category	Description	Date
+* The webhook accepts POST with JSON body containing the expense fields
+* The webhook returns the AI-generated expense summary in the response body
+Backend changes needed:
+1. Add a new API route POST /api/agents/:slug/trigger that:
+    * Accepts the input fields from the frontend (the expense form data)
+    * Forwards the data to the n8n webhook URL via HTTP POST
+    * Returns the n8n response (the generated summary) back to the frontend
+    * This route should be behind admin auth (requireAuth middleware)
+2. Add the webhook URL to the agents table in the DB schema — add a webhookUrl column (nullable text) so each agent can have its own webhook URL. Update the seed file to set the expense-tracker agent's webhookUrl.
+3. Update the OpenAPI spec, Zod schemas, and run codegen for the new endpoint.
+Frontend changes needed:
+1. On the agent detail page (agent-detail.tsx), change the "Initialize Agent" button:
+    * If user is logged in as admin, clicking it opens an inline panel/section (not a modal) below the button
+    * The panel shows a form with fields matching the Google Sheet columns (Date picker, Amount input, Category dropdown with common categories like Food, Transport, Utilities, Entertainment, Shopping, Other, and Description text input)
+    * The form allows adding multiple expense entries (an "Add Another Entry" button that adds another row of fields)
+    * A "Run Agent" button at the bottom submits all entries
+2. Step-by-step progress display: When "Run Agent" is clicked:
+    * Show a progress tracker with these steps displayed sequentially with animated transitions:
+        * Step 1: "Submitting expense data..." (shows while API call is being made)
+        * Step 2: "Saving to Google Sheets..." (shows after ~1 second)
+        * Step 3: "Filtering this week's expenses..." (shows after ~2 seconds)
+        * Step 4: "AI analyzing spending patterns..." (shows after ~3 seconds)
+        * Step 5: "Generating expense report..." (shows after ~5 seconds)
+        * Step 6: "Sending email summary..." (shows after ~7 seconds)
+    * These are timed visual indicators that simulate the pipeline steps while waiting for the actual webhook response
+    * Once the real response comes back, immediately jump to completion regardless of which step is showing
+3. Output display: When the response arrives:
+    * Show a success state with the AI-generated summary rendered in a styled card below the form
+    * Show a "✓ Email sent to [email]" badge
+    * The summary should be formatted nicely (it's plain text from the LLM, render it with proper line breaks and sections)
+    * Add a "Run Again" button to reset the form
+4. If the user is NOT logged in, the "Initialize Agent" button should still link to /admin/login as it does now.
+Also update the seed data for the expense-tracker agent description to reflect what this agent actually does:
+* It's a Google Form + Google Sheets + GPT-4.1-mini + Gmail pipeline
+* Users submit expenses via a form, data is stored in Google Sheets
+* Every week (or on-demand), the AI analyzes spending patterns and sends a categorized summary via email
+* The n8n workflow handles the orchestration
+Keep the existing UI style (dark theme, cyan primary, Space Grotesk headings, monospace accents). Don't change the overall layout structure.

@@ -12,6 +12,7 @@ export const agentsTable = pgTable("agents", {
   requirements: text("requirements").notNull(),
   expectedOutput: text("expected_output").notNull(),
   sampleExamples: json("sample_examples").notNull().$type<Array<{ title: string; input: string; output: string }>>(),
+  webhookUrl: text("webhook_url"),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

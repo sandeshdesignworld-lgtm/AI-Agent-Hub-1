@@ -1,35 +1,36 @@
 import bcrypt from "bcrypt";
 import { db, adminsTable, agentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
 
 const agents = [
   {
     slug: "expense-tracker",
     name: "Expense Tracker",
-    shortDescription: "Automatically categorize and analyze your spending with AI-powered insights.",
+    shortDescription: "Submit expenses via form, stored in Google Sheets, analyzed by GPT-4.1-mini, and delivered as a weekly email summary via Gmail.",
     description:
-      "The Expense Tracker Agent is an intelligent financial assistant that monitors your spending patterns, categorizes transactions in real-time, and provides actionable insights to help you manage your budget effectively. It integrates with your financial data to give you a comprehensive view of where your money goes.",
+      "The Expense Tracker Agent is a Google Forms + Google Sheets + GPT-4.1-mini + Gmail pipeline orchestrated by n8n. Users submit their expenses through a structured form. The data is stored in a connected Google Sheet. On demand or on a weekly schedule, the agent reads all recent entries, passes them to GPT-4.1-mini for categorization and pattern analysis, and sends a formatted spending summary directly to your inbox via Gmail.",
     howItWorks:
-      "The agent connects to your financial accounts or accepts manual transaction input. It uses NLP to classify each transaction into categories (food, transport, utilities, entertainment, etc.), detects anomalies and overspending, and generates weekly/monthly summaries with visual breakdowns. It can also suggest optimizations based on your spending history.",
+      "1. User submits expense entries (amount, category, description, date) via the admin panel.\n2. The n8n workflow receives the data and appends each entry to a connected Google Sheet.\n3. The workflow retrieves this week's expenses from the sheet.\n4. GPT-4.1-mini analyzes the spending data: categorizes entries, identifies patterns, and generates a human-readable summary.\n5. The summary is sent to the configured Gmail address as a formatted email report.\n6. The generated summary is returned to the admin panel for immediate preview.",
     requirements:
-      "Financial transaction data (CSV export or API connection), user-defined budget categories and limits, date range for analysis. Optional: bank API credentials for live sync.",
+      "Admin access to the AgentHub dashboard, expense entries (amount, category, description, date), Google Sheet connected via n8n, Gmail account configured in the n8n workflow.",
     expectedOutput:
-      "Categorized expense report with totals per category, budget utilization percentages, trend analysis over time, top spending areas, anomaly alerts, and personalized saving recommendations.",
+      "A categorized weekly expense summary email delivered via Gmail, including total spend, breakdown by category, spending patterns, and any notable observations from GPT-4.1-mini. The summary is also previewed in the admin panel immediately after submission.",
     sampleExamples: [
       {
-        title: "Monthly Budget Analysis",
-        input: "Analyze my expenses for March 2024. I have a $3,000 monthly budget.",
+        title: "Weekly Expense Summary",
+        input: "Food: ₹850 (lunch meetings, 3 entries), Transport: ₹1,200 (cab rides, 4 entries), Office Supplies: ₹2,500 (stationery), Utilities: ₹600 (internet bill).",
         output:
-          "March 2024 Summary: Total spent $2,847. Food & Dining: $620 (21%), Transport: $340 (12%), Utilities: $180 (6%), Entertainment: $430 (15%), Shopping: $890 (31%), Other: $387 (14%). You are $153 under budget. Alert: Entertainment spending is 43% higher than your February average.",
+          "Weekly Expense Summary\n\nTotal Spend: ₹5,150\n\nBy Category:\n• Office Supplies: ₹2,500 (48.5%) — highest spend this week\n• Transport: ₹1,200 (23.3%) — 4 trips logged\n• Food: ₹850 (16.5%) — 3 lunch meetings\n• Utilities: ₹600 (11.6%) — recurring bill\n\nObservations: Office supplies account for nearly half of this week's spend. Transport costs are consistent with previous weeks. Email sent to configured Gmail address.",
       },
       {
-        title: "Anomaly Detection",
-        input: "Flag any unusual transactions in my account this week.",
+        title: "Multi-Category Entry Run",
+        input: "Shopping: ₹3,200 (electronics), Entertainment: ₹900 (team outing), Food: ₹450 (team lunch), Transport: ₹300 (auto rides).",
         output:
-          "2 anomalies detected: (1) $450 charge at 'TechStore Pro' on Tuesday — 3x your average electronics purchase. (2) 5 small transactions at the same merchant in 2 hours on Thursday — potential duplicate or fraud. Recommend reviewing these immediately.",
+          "Weekly Expense Summary\n\nTotal Spend: ₹4,850\n\nBy Category:\n• Shopping: ₹3,200 (66%) — electronics purchase noted\n• Entertainment: ₹900 (18.6%) — team outing\n• Food: ₹450 (9.3%) — team lunch\n• Transport: ₹300 (6.2%) — local commute\n\nObservations: Shopping is the dominant category this week due to an electronics purchase. Discretionary spend (entertainment + shopping) accounts for 84.6% of total. Email sent to configured Gmail address.",
       },
     ],
+    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/expense-tracker",
     order: 1,
   },
   {
@@ -250,17 +251,24 @@ async function seed() {
   }
 
   for (const agent of agents) {
-    const [existing] = await db
-      .select()
-      .from(agentsTable)
-      .where(eq(agentsTable.slug, agent.slug));
-
-    if (!existing) {
-      await db.insert(agentsTable).values(agent);
-      logger.info({ slug: agent.slug }, "Agent seeded");
-    } else {
-      logger.info({ slug: agent.slug }, "Agent already exists");
-    }
+    await db
+      .insert(agentsTable)
+      .values(agent)
+      .onConflictDoUpdate({
+        target: agentsTable.slug,
+        set: {
+          name: sql`excluded.name`,
+          shortDescription: sql`excluded.short_description`,
+          description: sql`excluded.description`,
+          howItWorks: sql`excluded.how_it_works`,
+          requirements: sql`excluded.requirements`,
+          expectedOutput: sql`excluded.expected_output`,
+          sampleExamples: sql`excluded.sample_examples`,
+          webhookUrl: sql`excluded.webhook_url`,
+          order: sql`excluded.order`,
+        },
+      });
+    logger.info({ slug: agent.slug }, "Agent upserted");
   }
 
   logger.info("Seed complete.");

@@ -53,7 +53,31 @@ export const GetAgentResponse = zod.object({
   "input": zod.string(),
   "output": zod.string()
 })),
-  "order": zod.number()
+  "order": zod.number(),
+  "webhookUrl": zod.string().nullish()
+})
+
+
+/**
+ * Forwards input data to the agent's configured webhook. Requires admin authentication.
+ * @summary Trigger an agent workflow
+ */
+export const TriggerAgentParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const TriggerAgentBody = zod.object({
+  "entries": zod.array(zod.object({
+  "amount": zod.string(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "date": zod.string()
+}))
+})
+
+export const TriggerAgentResponse = zod.object({
+  "success": zod.boolean(),
+  "summary": zod.string()
 })
 
 

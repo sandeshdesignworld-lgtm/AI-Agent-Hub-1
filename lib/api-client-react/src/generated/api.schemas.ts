@@ -34,6 +34,23 @@ export interface AgentDetail {
   expectedOutput: string;
   sampleExamples: SampleExample[];
   order: number;
+  webhookUrl?: string | null;
+}
+
+export interface ExpenseEntry {
+  amount: string;
+  category: string;
+  description: string;
+  date: string;
+}
+
+export interface AgentTriggerInput {
+  entries: ExpenseEntry[];
+}
+
+export interface AgentTriggerResult {
+  success: boolean;
+  summary: string;
 }
 
 export interface AdminCredentials {

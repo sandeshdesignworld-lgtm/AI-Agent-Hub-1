@@ -24,6 +24,8 @@ import type {
   AdminUser,
   Agent,
   AgentDetail,
+  AgentTriggerInput,
+  AgentTriggerResult,
   ErrorResponse,
   HealthStatus,
   SuccessResponse
@@ -274,6 +276,79 @@ export function useGetAgent<TData = Awaited<ReturnType<typeof getAgent>>, TError
 
 
 
+
+export const getTriggerAgentUrl = (slug: string,) => {
+
+
+
+
+  return `/api/agents/${slug}/trigger`
+}
+
+/**
+ * Forwards input data to the agent's configured webhook. Requires admin authentication.
+ * @summary Trigger an agent workflow
+ */
+export const triggerAgent = async (slug: string,
+    agentTriggerInput: AgentTriggerInput, options?: RequestInit): Promise<AgentTriggerResult> => {
+
+  return customFetch<AgentTriggerResult>(getTriggerAgentUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      agentTriggerInput,)
+  }
+);}
+
+
+
+
+export const getTriggerAgentMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof triggerAgent>>, TError,{slug: string;data: BodyType<AgentTriggerInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof triggerAgent>>, TError,{slug: string;data: BodyType<AgentTriggerInput>}, TContext> => {
+
+const mutationKey = ['triggerAgent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof triggerAgent>>, {slug: string;data: BodyType<AgentTriggerInput>}> = (props) => {
+          const {slug,data} = props ?? {};
+
+          return  triggerAgent(slug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TriggerAgentMutationResult = NonNullable<Awaited<ReturnType<typeof triggerAgent>>>
+    export type TriggerAgentMutationBody = BodyType<AgentTriggerInput>
+    export type TriggerAgentMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Trigger an agent workflow
+ */
+export const useTriggerAgent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof triggerAgent>>, TError,{slug: string;data: BodyType<AgentTriggerInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof triggerAgent>>,
+        TError,
+        {slug: string;data: BodyType<AgentTriggerInput>},
+        TContext
+      > => {
+      return useMutation(getTriggerAgentMutationOptions(options));
+    }
 
 export const getAdminLoginUrl = () => {
 

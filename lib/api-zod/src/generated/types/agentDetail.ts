@@ -18,4 +18,5 @@ export interface AgentDetail {
   expectedOutput: string;
   sampleExamples: SampleExample[];
   order: number;
+  webhookUrl?: string | null;
 }
