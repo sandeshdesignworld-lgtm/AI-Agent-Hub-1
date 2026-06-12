@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
-import NodeFormData from "form-data";
 import { db, agentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
@@ -100,6 +99,8 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
     return;
   }
 
+  console.log("[HR Agent] buffer length:", req.file.buffer.length);
+
   const [agent] = await db
     .select({ webhookUrl: agentsTable.webhookUrl })
     .from(agentsTable)
@@ -112,14 +113,11 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
   }
 
   const originalFileName = req.file.originalname || "resume.pdf";
-  const formData = new NodeFormData();
-  formData.append('resume', req.file.buffer, {
-    filename: originalFileName,
-    contentType: req.file.mimetype || 'application/pdf',
-  });
+  const blob = new Blob([req.file.buffer], { type: req.file.mimetype || "application/pdf" });
+  const formData = new FormData();
+  formData.append("resume", blob, originalFileName);
 
   console.log(`[HR Agent] forwarding to Make.com... url=${agent.webhookUrl} fileSize=${req.file.size} filename=${originalFileName}`);
-  console.log(`[HR Agent] formData headers:`, formData.getHeaders());
   req.log.info({ fileSize: req.file.size }, "Triggering HR Bot webhook");
 
   const controller = new AbortController();
@@ -129,7 +127,6 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
     const webhookResponse = await fetch(agent.webhookUrl, {
       method: "POST",
       body: formData,
-      headers: formData.getHeaders(),
       signal: controller.signal,
     });
 

@@ -101,7 +101,6 @@ async function buildAll() {
       "puppeteer-core",
       "electron",
       "multer",
-      "form-data",
     ],
     sourcemap: "linked",
     plugins: [
