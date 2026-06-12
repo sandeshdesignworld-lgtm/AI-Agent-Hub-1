@@ -9,7 +9,7 @@ import {
   ArrowLeft, TerminalSquare, Settings, Play, Database,
   Plus, Trash2, ChevronDown, CheckCircle2, Loader2,
   RotateCcw, Mail, Zap, AlertTriangle, Upload, FileText, X,
-  User, Phone, MapPin, GraduationCap
+  User, Phone, MapPin, GraduationCap, PhoneCall, PhoneOff, PhoneMissed
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -304,6 +304,185 @@ function ProgressStepper({ steps, currentStep }: { steps: string[]; currentStep:
   );
 }
 
+/* ══════════════════════════════════════════════════════
+   Campus Concierge — Bolna voice call panel
+══════════════════════════════════════════════════════ */
+type CcCallStatus = "idle" | "connecting" | "ringing" | "in-progress" | "completed" | "failed";
+
+function mapBolnaStatus(raw: string): CcCallStatus {
+  const s = raw.toLowerCase().replace(/-/g, "_");
+  if (["queued", "scheduled", "initiated"].includes(s)) return "ringing";
+  if (s === "in_progress") return "in-progress";
+  if (["completed", "call_completed"].includes(s)) return "completed";
+  if (["failed", "error", "no_answer", "busy"].includes(s)) return "failed";
+  return "ringing";
+}
+
+function CampusConciergePanel() {
+  const [phoneInput, setPhoneInput] = useState("");
+  const [callStatus, setCallStatus] = useState<CcCallStatus>("idle");
+  const [executionId, setExecutionId] = useState<string | null>(null);
+  const [ccError, setCcError] = useState<string | null>(null);
+  const [duration, setDuration] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopPolling() {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+  }
+
+  function reset() {
+    stopPolling();
+    setPhoneInput(""); setCallStatus("idle"); setExecutionId(null);
+    setCcError(null); setDuration(null); setTranscript(null); setSummary(null); setRecordingUrl(null);
+  }
+
+  useEffect(() => () => stopPolling(), []);
+
+  async function pollStatus(execId: string) {
+    try {
+      const res = await fetch(`/api/bolna/call-status/${execId}`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json() as { status?: string; transcript?: string; summary?: string; duration?: string | number; recording_url?: string };
+      if (!data.status) return;
+      const mapped = mapBolnaStatus(data.status);
+      setCallStatus(mapped);
+      if (data.duration) setDuration(String(data.duration));
+      if (data.transcript) setTranscript(data.transcript);
+      if (data.summary) setSummary(data.summary);
+      if (data.recording_url) setRecordingUrl(data.recording_url);
+      if (mapped === "completed" || mapped === "failed") stopPolling();
+    } catch { /* ignore poll errors */ }
+  }
+
+  async function handleGetCall() {
+    const digits = phoneInput.replace(/\D/g, "");
+    if (digits.length < 10) return;
+    setCcError(null); setCallStatus("connecting");
+    try {
+      const res = await fetch("/api/agents/campus-concierge/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ phoneNumber: `+91${digits}` }),
+      });
+      const data = await res.json() as { executionId?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const execId = data.executionId ?? null;
+      setExecutionId(execId);
+      setCallStatus("ringing");
+      if (execId) { pollingRef.current = setInterval(() => pollStatus(execId), 3000); }
+    } catch (e: unknown) {
+      setCcError(e instanceof Error ? e.message : "Failed to place call");
+      setCallStatus("failed");
+    }
+  }
+
+  const isTerminal = callStatus === "completed" || callStatus === "failed";
+
+  return (
+    <section className="bg-card/40 border border-primary/20 rounded-xl backdrop-blur-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-border/50 flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+        <span className="font-mono text-sm text-primary uppercase tracking-widest">Try This Agent</span>
+      </div>
+      <div className="p-6">
+        <AnimatePresence mode="wait">
+          {callStatus === "idle" ? (
+            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Enter your phone number and the Campus Concierge will call you for a live demo.
+              </p>
+              <div className="flex gap-3">
+                <div className="flex items-center flex-1 bg-background/60 border border-border/50 rounded-lg overflow-hidden focus-within:border-primary/60 transition-colors">
+                  <span className="px-3 py-2 text-sm font-mono text-muted-foreground border-r border-border/50 bg-muted/20 select-none shrink-0">+91</span>
+                  <input
+                    type="tel"
+                    placeholder="98765 43210"
+                    value={phoneInput}
+                    onChange={e => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    onKeyDown={e => e.key === "Enter" && phoneInput.replace(/\D/g, "").length >= 10 && handleGetCall()}
+                    className="flex-1 bg-transparent px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none min-w-0"
+                  />
+                </div>
+                <Button
+                  onClick={handleGetCall}
+                  disabled={phoneInput.replace(/\D/g, "").length < 10}
+                  className="gap-2 shrink-0 shadow-[0_0_15px_rgba(var(--primary),0.2)]"
+                >
+                  <PhoneCall className="w-4 h-4" /> Get a Call
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div key="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+              <div className={cn(
+                "rounded-xl border p-5 space-y-3",
+                callStatus === "completed" ? "bg-green-500/5 border-green-500/30" :
+                callStatus === "failed"    ? "bg-destructive/5 border-destructive/30" :
+                "bg-primary/5 border-primary/30"
+              )}>
+                <div className="flex items-center gap-3">
+                  {(callStatus === "connecting" || callStatus === "ringing" || callStatus === "in-progress") && (
+                    <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
+                  )}
+                  {callStatus === "completed" && <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />}
+                  {callStatus === "failed"    && <PhoneOff className="w-5 h-5 text-destructive shrink-0" />}
+                  <div>
+                    <p className={cn(
+                      "font-medium text-sm",
+                      callStatus === "completed" ? "text-green-400" :
+                      callStatus === "failed"    ? "text-destructive" : "text-primary"
+                    )}>
+                      {callStatus === "connecting"  && "Connecting…"}
+                      {callStatus === "ringing"     && "Ringing your phone…"}
+                      {callStatus === "in-progress" && "Call in progress…"}
+                      {callStatus === "completed"   && "Call completed"}
+                      {callStatus === "failed"      && "Call could not be placed"}
+                    </p>
+                    {executionId && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {executionId}</p>}
+                  </div>
+                </div>
+                {ccError && <p className="text-xs text-destructive font-mono">{ccError}</p>}
+                {duration && <p className="text-xs text-muted-foreground font-mono">Duration: {duration}s</p>}
+              </div>
+
+              {transcript && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border/50 bg-background/60 p-4">
+                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Transcript</div>
+                  <p className="text-sm font-mono text-foreground/80 whitespace-pre-wrap leading-relaxed">{transcript}</p>
+                </motion.div>
+              )}
+
+              {summary && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="text-[10px] font-mono text-primary/70 uppercase tracking-widest mb-2">Call Summary</div>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{summary}</p>
+                </motion.div>
+              )}
+
+              {recordingUrl && (
+                <a href={recordingUrl} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono text-primary hover:underline">
+                  <PhoneCall className="w-3 h-3" /> Recording
+                </a>
+              )}
+
+              {isTerminal && (
+                <Button variant="outline" size="sm" onClick={reset} className="gap-2 border-primary/20 hover:text-primary text-xs">
+                  <RotateCcw className="w-3 h-3" /> Try Another Call
+                </Button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}
+
 export default function AgentDetail() {
   const { slug } = useParams<{ slug: string }>();
 
@@ -346,6 +525,7 @@ export default function AgentDetail() {
   const isDeadlineTracker = slug === "deadline-tracker";
   const isHRAgent = slug === "hr-agent";
   const isHospitalReceptionist = slug === "hospital-receptionist";
+  const isCampusConcierge = slug === "campus-concierge";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -605,6 +785,8 @@ export default function AgentDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-8">
+            {isCampusConcierge && <CampusConciergePanel />}
+
             <section className="bg-card/40 border border-border/50 rounded-xl p-6 backdrop-blur-sm">
               <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
                 <Database className="w-5 h-5 text-primary" /> Overview

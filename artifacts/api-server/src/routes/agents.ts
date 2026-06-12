@@ -269,6 +269,70 @@ router.post("/agents/hospital-receptionist/trigger", requireAuth, async (req, re
   }
 });
 
+/* ── Campus Concierge — Bolna outbound call ── */
+router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): Promise<void> => {
+  const { phoneNumber } = req.body as { phoneNumber?: string };
+
+  if (!phoneNumber || typeof phoneNumber !== "string") {
+    res.status(400).json({ error: "phoneNumber is required" });
+    return;
+  }
+
+  const digits = phoneNumber.replace(/\D/g, "");
+  if (digits.length < 10 || digits.length > 15) {
+    res.status(400).json({ error: "phoneNumber must have 10–15 digits" });
+    return;
+  }
+
+  const normalised = phoneNumber.trim().startsWith("+") ? phoneNumber.trim() : `+91${digits}`;
+
+  const apiKey = process.env.BOLNA_API_KEY;
+  const agentId = process.env.BOLNA_AGENT_ID;
+
+  if (!apiKey || !agentId) {
+    console.error("[CampusConcierge] Missing BOLNA_API_KEY or BOLNA_AGENT_ID env var");
+    res.status(500).json({ error: "Bolna credentials not configured on the server" });
+    return;
+  }
+
+  console.log(`[CampusConcierge] Triggering Bolna call to ${normalised} with agent ${agentId}`);
+  req.log.info({ phone: normalised }, "Campus Concierge Bolna call triggered");
+
+  try {
+    const bolnaRes = await fetch("https://api.bolna.ai/call", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        agent_id: agentId,
+        recipient_phone_number: normalised,
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    const responseText = await bolnaRes.text();
+    console.log(`[CampusConcierge] Bolna response status=${bolnaRes.status} body=${responseText.slice(0, 300)}`);
+
+    let data: Record<string, unknown> = {};
+    try { data = JSON.parse(responseText); } catch { data = { raw: responseText }; }
+
+    if (!bolnaRes.ok) {
+      const errMsg = (data.message ?? data.error ?? responseText).toString().slice(0, 200);
+      res.status(502).json({ error: `Bolna error: ${errMsg}` });
+      return;
+    }
+
+    const executionId = (data.execution_id ?? data.executionId ?? data.call_id ?? data.id) as string | undefined;
+    res.json({ executionId, status: "triggered" });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[CampusConcierge] ERROR: ${msg}`);
+    res.status(502).json({ error: `Failed to place call: ${msg}` });
+  }
+});
+
 router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void> => {
   const params = TriggerAgentParams.safeParse(req.params);
   if (!params.success) {

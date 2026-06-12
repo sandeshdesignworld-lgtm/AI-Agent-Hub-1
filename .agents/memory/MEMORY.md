@@ -1,1 +1,1 @@
-- [connect-pg-simple esbuild session fix](connect-pg-session.md) — never use `createTableIfMissing: true` with esbuild; create the session table via a separate migration instead.
+- [Bolna integration pattern](bolna-pattern.md) — Campus Concierge uses Bolna for outbound voice calls; env vars BOLNA_API_KEY + BOLNA_AGENT_ID; in-memory webhook cache in bolnaRouter.
