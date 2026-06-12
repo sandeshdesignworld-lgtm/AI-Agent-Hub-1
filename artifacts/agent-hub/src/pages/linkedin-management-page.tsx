@@ -1,12 +1,28 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Brain, PenTool, Sparkles, Image, Mail, Share2,
   CheckCircle2, Loader2, RotateCcw, ArrowRight, Network,
-  AlertTriangle, Send, Clock,
+  AlertTriangle, Send, Clock, History,
 } from "lucide-react";
+
+type LinkedinSubmission = {
+  id: number;
+  submittedAt: string;
+  topic: string;
+  category: string;
+  audience: string;
+  status: string;
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  pending:   "text-amber-400  border-amber-500/30  bg-amber-500/10",
+  approved:  "text-green-400  border-green-500/30  bg-green-500/10",
+  rejected:  "text-red-400    border-red-500/30    bg-red-500/10",
+  published: "text-cyan-400   border-cyan-500/30   bg-cyan-500/10",
+};
 
 /* ── Pipeline nodes ── */
 const PIPELINE_NODES = [
@@ -91,9 +107,26 @@ export function LinkedInManagementPage() {
   const [error, setError]               = useState<string | null>(null);
   const [submittedTopic, setSubmittedTopic] = useState("");
 
+  const [submissions, setSubmissions]   = useState<LinkedinSubmission[]>([]);
+  const [subLoading, setSubLoading]     = useState(true);
+
   const simulationRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const formRef        = useRef<HTMLDivElement>(null);
   const topicInputRef  = useRef<HTMLInputElement>(null);
+
+  const fetchSubmissions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/agents/linkedin-management/submissions", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json() as LinkedinSubmission[];
+        setSubmissions(data);
+      }
+    } catch {
+      /* silent — log won't break the main UI */
+    } finally {
+      setSubLoading(false);
+    }
+  }, []);
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -115,7 +148,11 @@ export function LinkedInManagementPage() {
     setTopic(""); setCategory("General Professional"); setCustomCategory(""); setAudience("");
   }
 
-  useEffect(() => () => stopSim(), []);
+  useEffect(() => {
+    fetchSubmissions();
+    return () => stopSim();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleGenerate() {
     const t = topic.trim();
@@ -136,6 +173,7 @@ export function LinkedInManagementPage() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
 
       /* API responded — mark steps 0-1 done, start simulating from step 2 */
+      void fetchSubmissions();
       setStep(SIMULATED_START);
       let cur = SIMULATED_START;
       simulationRef.current = setInterval(() => {
@@ -426,6 +464,73 @@ export function LinkedInManagementPage() {
               </motion.div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ── Submission History ── */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <History className="w-4 h-4 text-muted-foreground" />
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Submission History</div>
+        </div>
+        <div className="bg-card/40 border border-border/50 rounded-xl overflow-hidden backdrop-blur-sm">
+          {subLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="font-mono">Loading submissions…</span>
+            </div>
+          ) : submissions.length === 0 ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground text-sm font-mono">
+              No submissions yet — topics will appear here after you submit them.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                    <th className="text-left px-4 py-3">Date</th>
+                    <th className="text-left px-4 py-3">Topic</th>
+                    <th className="text-left px-4 py-3 hidden sm:table-cell">Category</th>
+                    <th className="text-left px-4 py-3 hidden md:table-cell">Audience</th>
+                    <th className="text-left px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {submissions.map((row, i) => (
+                    <motion.tr
+                      key={row.id}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(row.submittedAt).toLocaleString(undefined, {
+                          month: "short", day: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-foreground max-w-xs">
+                        <span className="line-clamp-2">{row.topic}</span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell text-xs">{row.category}</td>
+                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell text-xs max-w-[180px] truncate">
+                        {row.audience || <span className="opacity-40">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={cn(
+                          "text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full border",
+                          STATUS_STYLE[row.status] ?? "text-muted-foreground border-border/40 bg-muted/20"
+                        )}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

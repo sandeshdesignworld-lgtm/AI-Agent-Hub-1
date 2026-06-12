@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
-import { db, agentsTable, hospitalCallLogTable, campusConciergeCallLogTable } from "@workspace/db";
+import { db, agentsTable, hospitalCallLogTable, campusConciergeCallLogTable, linkedinSubmissionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -393,6 +393,15 @@ router.post("/agents/linkedin-management/trigger", requireAuth, async (req, res)
       return;
     }
 
+    db.insert(linkedinSubmissionsTable)
+      .values({
+        topic: payload.Topic,
+        category: payload.Category,
+        audience: payload.Audience,
+        status: "pending",
+      })
+      .catch(err => console.error("[LinkedIn] submission-log insert failed:", err));
+
     if (Object.keys(data).length === 0) {
       res.json({ status: "accepted", topic: payload.Topic, message: "Topic submitted to content pipeline" });
       return;
@@ -404,6 +413,15 @@ router.post("/agents/linkedin-management/trigger", requireAuth, async (req, res)
     console.error(`[LinkedIn] ERROR: ${msg}`);
     res.status(502).json({ error: `Failed to submit to pipeline: ${msg}` });
   }
+});
+
+router.get("/agents/linkedin-management/submissions", requireAuth, async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(linkedinSubmissionsTable)
+    .orderBy(desc(linkedinSubmissionsTable.submittedAt))
+    .limit(50);
+  res.json(rows);
 });
 
 router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void> => {
