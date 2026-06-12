@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
-import { db, agentsTable, hospitalCallLogTable } from "@workspace/db";
+import { db, agentsTable, hospitalCallLogTable, campusConciergeCallLogTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -269,6 +269,16 @@ router.post("/agents/hospital-receptionist/trigger", requireAuth, async (req, re
   }
 });
 
+/* ── Campus Concierge — call log GET ── */
+router.get("/agents/campus-concierge/call-log", requireAuth, async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(campusConciergeCallLogTable)
+    .orderBy(desc(campusConciergeCallLogTable.calledAt))
+    .limit(50);
+  res.json({ calls: rows });
+});
+
 /* ── Campus Concierge — Bolna outbound call ── */
 router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): Promise<void> => {
   const { phoneNumber } = req.body as { phoneNumber?: string };
@@ -325,6 +335,11 @@ router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): P
     }
 
     const executionId = (data.execution_id ?? data.executionId ?? data.call_id ?? data.id) as string | undefined;
+
+    db.insert(campusConciergeCallLogTable)
+      .values({ phoneNumber: normalised, executionId: executionId ?? null, status: "triggered" })
+      .catch(err => console.error("[CampusConcierge] call-log insert failed:", err));
+
     res.json({ executionId, status: "triggered" });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

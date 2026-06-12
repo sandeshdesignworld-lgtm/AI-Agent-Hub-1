@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import { db, campusConciergeCallLogTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -81,6 +83,26 @@ router.post("/bolna/webhook", (req, res): void => {
   if (execId) {
     const existing = webhookCache.get(execId) ?? {};
     webhookCache.set(execId, { ...existing, ...body });
+
+    const merged: Record<string, unknown> = { ...existing, ...body };
+    const status = (merged.status ?? merged.call_status) as string | undefined;
+    const rawDuration = merged.duration ?? merged.call_duration;
+    const duration = rawDuration != null ? parseInt(String(rawDuration), 10) || null : null;
+    const summary = (merged.summary ?? merged.call_summary) as string | undefined;
+    const transcript = (merged.transcript ?? merged.call_transcript) as string | undefined;
+
+    const updateData: Partial<typeof campusConciergeCallLogTable.$inferInsert> = {};
+    if (status) updateData.status = status;
+    if (duration != null) updateData.duration = duration;
+    if (summary) updateData.summary = summary;
+    if (transcript) updateData.transcript = transcript;
+
+    if (Object.keys(updateData).length > 0) {
+      db.update(campusConciergeCallLogTable)
+        .set(updateData)
+        .where(eq(campusConciergeCallLogTable.executionId, execId))
+        .catch(err => console.error("[Bolna] call-log update failed:", err));
+    }
   }
 
   res.status(200).json({ received: true });

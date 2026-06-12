@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useGetAgent, getGetAgentQueryKey, useGetAuthMe, getGetAuthMeQueryKey, useTriggerAgent } from "@workspace/api-client-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +9,8 @@ import {
   ArrowLeft, TerminalSquare, Settings, Play, Database,
   Plus, Trash2, ChevronDown, CheckCircle2, Loader2,
   RotateCcw, Mail, Zap, AlertTriangle, Upload, FileText, X,
-  User, Phone, MapPin, GraduationCap, PhoneCall, PhoneOff, PhoneMissed
+  User, Phone, MapPin, GraduationCap, PhoneCall, PhoneOff, PhoneMissed,
+  RefreshCw, ChevronRight
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -483,6 +484,203 @@ function CampusConciergePanel() {
   );
 }
 
+/* ══════════════════════════════════════════════════════
+   Campus Concierge — Call Log panel
+══════════════════════════════════════════════════════ */
+interface CcCallLogEntry {
+  id: number;
+  calledAt: string;
+  phoneNumber: string | null;
+  executionId: string | null;
+  status: string;
+  duration: number | null;
+  summary: string | null;
+  transcript: string | null;
+}
+
+const CC_STATUS_STYLES: Record<string, { label: string; cls: string }> = {
+  triggered:    { label: "Triggered",    cls: "bg-primary/10 border-primary/30 text-primary" },
+  ringing:      { label: "Ringing",      cls: "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" },
+  in_progress:  { label: "In Progress",  cls: "bg-amber-500/10 border-amber-500/30 text-amber-400" },
+  in_call:      { label: "In Progress",  cls: "bg-amber-500/10 border-amber-500/30 text-amber-400" },
+  completed:    { label: "Completed",    cls: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" },
+  call_completed: { label: "Completed",  cls: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" },
+  failed:       { label: "Failed",       cls: "bg-destructive/10 border-destructive/30 text-destructive" },
+  no_answer:    { label: "No Answer",    cls: "bg-destructive/10 border-destructive/30 text-destructive" },
+  busy:         { label: "Busy",         cls: "bg-destructive/10 border-destructive/30 text-destructive" },
+};
+
+function formatCcTs(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${date}, ${time}`;
+}
+
+function CampusConciergeCallLog() {
+  const [calls, setCalls] = useState<CcCallLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  async function fetchCalls(isManual = false) {
+    if (isManual) setRefreshing(true);
+    try {
+      const res = await fetch("/api/agents/campus-concierge/call-log", { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json() as { calls: CcCallLogEntry[] };
+      setCalls(json.calls ?? []);
+      setError(null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load call log");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
+    void fetchCalls();
+    const interval = setInterval(() => fetchCalls(), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function toggleExpand(id: number) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <section className="bg-card/40 border border-border/50 rounded-xl overflow-hidden backdrop-blur-sm">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/40 bg-muted/10">
+        <div className="flex items-center gap-2">
+          <PhoneCall className="w-3.5 h-3.5 text-primary" />
+          <span className="font-mono text-xs text-primary uppercase tracking-widest">Call Log</span>
+          {!loading && calls.length > 0 && (
+            <span className="ml-1 text-[10px] text-muted-foreground font-mono">{calls.length} entries</span>
+          )}
+        </div>
+        <button
+          onClick={() => fetchCalls(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+          Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Loading call history…
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-2 px-5 py-8 text-sm text-destructive">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          {error}
+        </div>
+      ) : calls.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center px-4">
+          <PhoneCall className="w-8 h-8 text-muted-foreground/30 mb-1" />
+          <p className="text-sm text-muted-foreground">No calls recorded yet.</p>
+          <p className="text-xs text-muted-foreground/60">Place a call above to see entries here.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm">
+              <tr className="border-b border-border/40">
+                <th className="w-6 px-3 py-2.5" />
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">#</th>
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Timestamp</th>
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Phone</th>
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Status</th>
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Duration</th>
+                <th className="text-left px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+              {calls.map((call, idx) => {
+                const style = CC_STATUS_STYLES[call.status.toLowerCase().replace(/-/g, "_")] ?? { label: call.status, cls: "bg-muted/20 border-border/50 text-muted-foreground" };
+                const isOpen = expanded.has(call.id);
+                const hasDetail = !!(call.transcript || call.summary);
+                return (
+                  <React.Fragment key={call.id}>
+                    <motion.tr
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                      onClick={() => hasDetail && toggleExpand(call.id)}
+                      className={cn(
+                        "border-b border-border/20 transition-colors",
+                        idx % 2 === 0 ? "bg-background/20" : "bg-muted/5",
+                        hasDetail && "cursor-pointer hover:bg-primary/5"
+                      )}
+                    >
+                      <td className="px-3 py-2.5 text-muted-foreground/40">
+                        {hasDetail && (
+                          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isOpen && "rotate-90")} />
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground/60">{call.id}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {formatCcTs(call.calledAt)}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs">
+                        {call.phoneNumber ?? <span className="text-muted-foreground/50">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-mono font-medium", style.cls)}>
+                          {style.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                        {call.duration != null ? `${call.duration}s` : <span className="text-muted-foreground/40">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate">
+                        {call.summary ?? <span className="text-muted-foreground/40">—</span>}
+                      </td>
+                    </motion.tr>
+                    {isOpen && hasDetail && (
+                      <tr key={`${call.id}-detail`} className="border-b border-border/20 bg-primary/3">
+                        <td colSpan={7} className="px-5 py-4">
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="space-y-3"
+                          >
+                            {call.summary && (
+                              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                                <div className="text-[10px] font-mono text-primary/70 uppercase tracking-widest mb-1.5">Summary</div>
+                                <p className="text-xs text-foreground/80 leading-relaxed">{call.summary}</p>
+                              </div>
+                            )}
+                            {call.transcript && (
+                              <div className="rounded-lg border border-border/40 bg-background/60 p-3">
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1.5">Transcript</div>
+                                <p className="text-xs font-mono text-foreground/70 whitespace-pre-wrap leading-relaxed">{call.transcript}</p>
+                              </div>
+                            )}
+                          </motion.div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AgentDetail() {
   const { slug } = useParams<{ slug: string }>();
 
@@ -786,6 +984,7 @@ export default function AgentDetail() {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-8">
             {isCampusConcierge && <CampusConciergePanel />}
+            {isCampusConcierge && <CampusConciergeCallLog />}
 
             <section className="bg-card/40 border border-border/50 rounded-xl p-6 backdrop-blur-sm">
               <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
