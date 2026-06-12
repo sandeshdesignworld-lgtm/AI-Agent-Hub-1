@@ -58,7 +58,7 @@ const AGENT_META: Record<string, {
   "hospital-receptionist": {
     category: "Healthcare / Voice",
     status: "Details Available",
-    tags: ["Voice Support", "Patient Queries", "Reception"],
+    tags: ["Healthcare", "Appointment Booking", "Voice Assistant"],
     icon: <Mic className="w-5 h-5" />,
   },
   "linkedin-management": {

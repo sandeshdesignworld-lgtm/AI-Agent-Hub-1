@@ -210,28 +210,35 @@ const agents = [
   },
   {
     slug: "hospital-receptionist",
-    name: "Hospital Receptionist Voice Agent",
-    shortDescription: "Conversational voice AI that handles patient intake, scheduling, and triage — 24/7 with human warmth.",
+    name: "Hospital Receptionist Agent",
+    shortDescription:
+      "AI-powered virtual receptionist that assists patients with appointment scheduling, rescheduling, cancellations, doctor information, and hospital support services.",
     description:
-      "The Hospital Receptionist Voice Agent provides a natural, empathetic voice interface for healthcare facilities. It handles inbound patient calls for appointment booking, prescription refills, test result inquiries, and emergency triage routing. It speaks naturally, handles multiple languages, and escalates appropriately while maintaining HIPAA compliance.",
+      "The Hospital Receptionist Agent is an AI-powered voice assistant designed to support patients calling City Hospital. Acting as a virtual front-desk receptionist, the agent helps patients book appointments, reschedule visits, cancel existing bookings, and obtain essential hospital information.\n\nBy guiding callers through a structured conversation, verifying patient details, and integrating directly with appointment management systems, the agent ensures a smooth and efficient patient experience while reducing administrative workload for hospital staff.",
     howItWorks:
-      "The agent uses advanced speech recognition and natural language understanding to handle phone calls. It authenticates patients via voice or DOB, accesses their medical records (with appropriate permissions), schedules appointments with the right specialist, and routes urgent cases to on-call staff immediately.",
+      "The Hospital Receptionist Agent answers inbound patient calls and identifies the caller's request.\n\nFor appointment bookings, the agent collects patient information, appointment preferences, and visit details before creating a confirmed booking. Patients may also request a booking link through email.\n\nFor appointment modifications, the agent verifies identity using the patient's phone number, retrieves existing appointments, and performs rescheduling or cancellation actions as requested.\n\nThe agent also provides general hospital information, doctor availability details, operating hours, and location guidance. If a request requires additional support, the caller can be transferred to a human receptionist.",
     requirements:
-      "Voice telephony integration (Twilio or similar), EHR system access (Epic, Cerner), appointment scheduling system, triage protocol configuration, HIPAA compliance setup, multi-language model configuration.",
+      "Appointment Scheduling System, Patient Verification Workflow, Doctor Directory Access, Appointment Management Functions, Email Notification Service, Hospital Information Repository, Voice Calling Platform, Human Receptionist Escalation",
     expectedOutput:
-      "Appointment confirmations via SMS/email, prescription refill requests forwarded to pharmacy, triage assessments with urgency classification, call transcripts and summaries, handoff notes for human staff.",
+      "Appointment booking assistance, Appointment rescheduling, Appointment cancellation, Patient verification, Doctor availability information, Hospital operating hours, Location and contact assistance, Email booking link delivery, Patient support guidance, Human receptionist escalation",
     sampleExamples: [
       {
-        title: "Appointment Scheduling Call",
-        input: "[Voice] Hi, I need to see a cardiologist. I've been having chest discomfort for a few days.",
+        title: "Appointment Booking",
+        input: "I'd like to book an appointment with a cardiologist.",
         output:
-          "[Voice Response] I'm sorry to hear that. Given your symptoms, I want to make sure you get seen quickly. Are you experiencing any shortness of breath or pain right now? [Patient: No, just mild discomfort] I'm checking cardiologist availability now. Dr. Patel has an opening tomorrow at 10:30 AM — this would be an urgent consultation. I can also connect you to our nurse line right now for initial assessment. Which would you prefer?",
+          "Certainly. May I have your full name?\nThank you.\nCould you please provide your phone number?\nWhich date and time would you prefer for the appointment?\nI have successfully booked your appointment with Dr. Prerna Ladkani. A confirmation has been recorded.",
       },
       {
-        title: "Prescription Refill Request",
-        input: "[Voice] I need a refill for my blood pressure medication. I have about 3 days left.",
+        title: "Appointment Rescheduling",
+        input: "I'd like to move my appointment to next Friday.",
         output:
-          "[Voice Response] I've pulled up your records. I can see you're on Lisinopril 10mg prescribed by Dr. Johnson. Your last refill was 30 days ago. I'm sending a refill request to the pharmacy now — it should be ready by tomorrow morning. I've also sent Dr. Johnson a note. Your pharmacy on Oak Street will text you when it's ready. Is there anything else I can help you with?",
+          "I'd be happy to help.\nCould you please provide the phone number associated with your appointment?\nThank you.\nWhich appointment would you like to reschedule and what is your preferred new date and time?\nYour appointment has been successfully rescheduled.",
+      },
+      {
+        title: "General Information",
+        input: "What are your hospital timings?",
+        output:
+          "City Hospital is open Monday through Friday from 8 AM to 6 PM and Saturday from 9 AM to 1 PM.\nThe hospital remains closed on Sundays.",
       },
     ],
     order: 7,
