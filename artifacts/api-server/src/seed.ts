@@ -152,6 +152,7 @@ const agents = [
     ],
     displayId: "SCH-BOOK-001",
     tagline: "Handles all aspects of scheduling — from finding the right time slot across multiple calendars to sending confirmations, reminders, and follow-ups.",
+    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/appointment-booking",
     order: 4,
   },
   {
@@ -218,6 +219,7 @@ const agents = [
     ],
     displayId: "EDU-CAMP-001",
     tagline: "Your intelligent university assistant — schedules, resources, events, and campus navigation unified in one place.",
+    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/campus-concierge",
     order: 6,
   },
   {
