@@ -1,0 +1,131 @@
+I need to add the Hospital Receptionist Voice Agent to the platform. It's a voice-based AI agent — patients CALL a phone number - +12296090223  and talk to an AI receptionist. The UI is a showcase + demo dashboard.
+
+## Context
+- Agent slug: hospital-receptionist (already in DB)
+- Voice agent powered by Retell AI — patients call a phone number
+- Behind the scenes, the voice agent calls n8n webhooks during conversations
+- Existing trigger route: POST /api/agents/:slug/trigger (already built for other agents)
+
+## n8n Webhook URLs:
+- Patient Lookup: https://n8n.srv1042888.hstgr.cloud/webhook/patient-lookup
+- Book Appointment: https://n8n.srv1042888.hstgr.cloud/webhook/appintment-booking-retell
+- Cancel Appointment: https://n8n.srv1042888.hstgr.cloud/webhook/cancellation-booking
+- Reschedule Appointment: https://n8n.srv1042888.hstgr.cloud/webhook/reschedule-booking
+
+## 1. Backend: Add hospital-receptionist to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a case for slug === "hospital-receptionist".
+
+This agent has 4 sub-actions. Frontend sends:
+{
+  "action": "patient_lookup" | "book_appointment" | "cancel_appointment" | "reschedule_appointment",
+  "args": { ... }
+}
+
+Route to the correct webhook based on action:
+
+**action === "patient_lookup":**
+- POST to Patient Lookup webhook
+- Body: { "args": { "phone_number": args.phone_number } }
+- Response: { found, patient_id, patient_name, phone, appointments_count, appointments, message }
+- IMPORTANT: "appointments" comes as a JSON STRING — parse with JSON.parse() before returning
+
+**action === "book_appointment":**
+- POST to Book Appointment webhook
+- Body: { "args": { "patient_name": args.patient_name, "patient_phone": args.patient_phone, "patient_email": args.patient_email, "doctor_name": args.doctor_name, "appointment_date": args.appointment_date, "appointment_time": args.appointment_time, "reason": args.reason } }
+- Response: { success, appointment_id, message }
+
+**action === "cancel_appointment":**
+- POST to Cancel webhook
+- Body: { "args": { "appointment_id": args.appointment_id } }
+- Response: { success, message }
+
+**action === "reschedule_appointment":**
+- POST to Reschedule webhook
+- Body: { "args": { "appointment_id": args.appointment_id, "new_date": args.new_date, "new_time": args.new_time } }
+- Response: { success, message, appointment_id, new_date, new_time }
+
+All 4: 60 second timeout. Invalid action → return 400.
+
+## 2. Frontend: Custom page for /agent/hospital-receptionist
+
+Override the generic agent detail template for this slug. Keep the Back to Registry button and page container.
+
+### Section 1: Hero Banner
+- Building2 icon + "Welcome to MediCare Hospital"
+- Subheading: "AI-Powered Voice Receptionist — Available 24/7"
+- Description: "Our AI receptionist handles patient lookups, appointment booking, cancellations, and rescheduling — all through a simple phone call."
+- Prominent "Call Now" card with phone number "+91 XXXXXXXXXX" (define as const VOICE_AGENT_PHONE at top of component)
+  - Phone icon, large number text, subtitle "Call to interact with the AI receptionist"
+  - Dark card, cyan gradient border, subtle glow
+
+### Section 2: Capabilities Grid (5 cards, responsive)
+1. **Patient Lookup** — UserSearch icon — "Look up any patient by phone number"
+2. **Book Appointment** — CalendarPlus icon — "Book new appointments with any doctor" + "Auto-creates patient record if new"
+3. **Cancel Appointment** — CalendarX2 icon — "Cancel any scheduled appointment"
+4. **Reschedule Appointment** — CalendarClock icon — "Move appointments to a new date & time"
+5. **Appointment Reminders** — BellRing icon — "Automated daily reminder calls at 6 PM" — show "Automated" badge (display-only, no trigger)
+
+### Section 3: "Try It Yourself" — Test Panel with 4 Tabs
+
+**Tab 1: Patient Lookup (default)**
+- Input: phone number field (placeholder: "e.g. 9876543210")
+- "Search Patient" button
+- Loading stepper: "Searching patient database..." → "Fetching appointment records..." → "Compiling patient profile..."
+- If found: patient card (name, ID, phone, appointments count) + appointments table (ID | Doctor | Date | Time | Reason) with Cancel (red) and Reschedule (cyan) buttons per row
+  - Cancel button → calls cancel_appointment with that row's ID → success toast → grey out row
+  - Reschedule button → inline form (new date picker, new time dropdown 09:00-17:00 in 30min slots) → calls reschedule_appointment → success toast → update row
+- If not found: info card "No patient found. This appears to be a new patient."
+
+**Tab 2: Book Appointment**
+- Form with two groups:
+  - "Patient Details": Patient Name (text), Phone (text), Email (email)
+  - "Appointment Details": Doctor Name (text), Date (date, min=today), Time (select 09:00-17:00 30min slots), Reason (text)
+- All fields required
+- "Book Appointment" button (cyan, full width)
+- Loading stepper: "Checking patient records..." → "Looking up doctor..." → "Creating appointment..." → "Confirming booking..."
+- Success: confirmation card with CalendarCheck icon showing appointment ID, patient, doctor, date, time, reason, full message
+- "Book Another" button to reset form
+
+**Tab 3: Cancel Appointment**
+- Input: Appointment ID (number)
+- "Cancel Appointment" button (red)
+- Loading → success/error card
+
+**Tab 4: Reschedule Appointment**
+- Inputs: Appointment ID (number), New Date (date, min=today), New Time (select 09:00-17:00)
+- "Reschedule" button (cyan)
+- Loading → confirmation card with new date/time
+
+### Section 4: How It Works — Pipeline
+Horizontal flow: "Patient Calls" → "AI Greets" → "Identifies Intent" → "Looks Up Records" → "Takes Action" → "Confirms to Patient"
+Same animated pipeline style as other agents.
+
+## 3. API Call Format
+All actions → POST /api/agents/hospital-receptionist/trigger
+
+Patient lookup body: { "action": "patient_lookup", "args": { "phone_number": "9876543210" } }
+Book body: { "action": "book_appointment", "args": { "patient_name": "John Doe", "patient_phone": "9876543210", "patient_email": "john@example.com", "doctor_name": "Dr. Smith", "appointment_date": "2026-06-20", "appointment_time": "10:30", "reason": "Consultation" } }
+Cancel body: { "action": "cancel_appointment", "args": { "appointment_id": 5 } }
+Reschedule body: { "action": "reschedule_appointment", "args": { "appointment_id": 5, "new_date": "2026-06-20", "new_time": "14:30" } }
+
+## 4. Important Data Notes
+- "found" and "success" are STRINGS "true"/"false" — check with === "true"
+- "appointments" may be a JSON string — frontend safety: if (typeof data.appointments === "string") JSON.parse(data.appointments)
+- Appointment IDs are numbers but come as strings — parseInt when needed
+- The booking workflow auto-creates patient records for new phone numbers
+
+## 5. Design Requirements
+- Dark theme with cyan/teal accents matching all other agents
+- Patient card: dark bg, subtle border glow
+- Appointments table: dark rows, alternating shading
+- Booking form: clean spacing, grouped sections with subtle dividers
+- Cancel = red/destructive, everything else = cyan/primary
+- Pill-style tab switcher with cyan active state
+- Same framer-motion stepper animations as other agents
+- Mobile responsive — stacked tabs, table → cards, form fields stack
+- Icons from lucide-react: Building2, Phone, UserSearch, CalendarPlus, CalendarX2, CalendarClock, BellRing, CalendarCheck, UserX
+- Only modify the content area for this slug — don't touch navbar, sidebar, or layout
+
+## 6. Seed Data
+Update hospital-receptionist description to: "AI-powered voice receptionist for MediCare Hospital. Patients call to look up their records, book new appointments, check upcoming visits, cancel or reschedule — all through natural conversation. Powered by Retell AI voice platform with n8n workflow automation and NocoDB patient database."
