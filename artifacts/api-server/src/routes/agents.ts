@@ -93,7 +93,7 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
   /* Extend socket timeout for this long-running route (Make.com takes 30-90s) */
   req.socket?.setTimeout(150_000);
 
-  console.log("[HR Agent] received file upload:", req.file ? `name=${req.file.originalname} size=${req.file.size}` : "NO FILE");
+  console.log("[HR Agent] file received:", req.file ? `name=${req.file.originalname} size=${req.file.size} bytes mime=${req.file.mimetype}` : "NO FILE — multer did not populate req.file");
 
   if (!req.file) {
     res.status(400).json({ error: "No resume file uploaded" });
@@ -113,9 +113,13 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
 
   const originalFileName = req.file.originalname || "resume.pdf";
   const formData = new NodeFormData();
-  formData.append('resume', req.file.buffer, { filename: originalFileName, contentType: 'application/pdf' });
+  formData.append('resume', req.file.buffer, {
+    filename: originalFileName,
+    contentType: req.file.mimetype || 'application/pdf',
+  });
 
-  console.log(`[HR Agent] forwarding to Make.com... url=${agent.webhookUrl} fileSize=${req.file.size}`);
+  console.log(`[HR Agent] forwarding to Make.com... url=${agent.webhookUrl} fileSize=${req.file.size} filename=${originalFileName}`);
+  console.log(`[HR Agent] formData headers:`, formData.getHeaders());
   req.log.info({ fileSize: req.file.size }, "Triggering HR Bot webhook");
 
   const controller = new AbortController();
@@ -125,6 +129,7 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
     const webhookResponse = await fetch(agent.webhookUrl, {
       method: "POST",
       body: formData,
+      headers: formData.getHeaders(),
       signal: controller.signal,
     });
 

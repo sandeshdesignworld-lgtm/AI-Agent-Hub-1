@@ -1,0 +1,39 @@
+The HR Bot agent's trigger route is not properly forwarding the uploaded PDF file to Make.com. 
+
+Evidence: Make.com receives only 32 bytes instead of the full PDF (97KB+). The form field name is also showing as "undefined" instead of "resume".
+
+Please find and fix the hr-agent file forwarding code. The issue is likely one of these:
+
+1. The file buffer from multer (req.file.buffer) might be empty or undefined — add a console.log to check:
+   console.log('HR Agent: file received:', req.file?.originalname, req.file?.size, 'bytes', req.file?.mimetype);
+   If req.file is undefined, multer middleware is not applied to this route.
+
+2. If using multer, make sure it's applied correctly to THIS specific route:
+   - import multer: const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+   - Apply it as middleware on just this route: router.post('/agents/hr-agent/trigger', upload.single('resume'), handler)
+   - The field name in upload.single('resume') MUST match what the frontend sends
+
+3. The FormData construction must use the actual buffer:
+   const FormData = require('form-data');  // make sure this is the 'form-data' npm package, not browser FormData
+   const formData = new FormData();
+   formData.append('resume', req.file.buffer, {
+     filename: req.file.originalname,
+     contentType: req.file.mimetype || 'application/pdf'
+   });
+
+4. The fetch call must use formData.getHeaders():
+   const response = await fetch('https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7', {
+     method: 'POST',
+     body: formData,
+     headers: formData.getHeaders()
+   });
+
+5. Make sure 'form-data' package is installed: pnpm add form-data
+
+6. On the frontend, make sure the upload sends the file with field name "resume":
+   const formData = new FormData();
+   formData.append('resume', file);
+   fetch('/api/agents/hr-agent/trigger', { method: 'POST', body: formData })
+   Do NOT set Content-Type header manually — the browser sets it automatically with the correct boundary.
+
+Add console.log at every step so we can trace where the file gets lost.
