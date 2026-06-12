@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import {
   Building2, Phone, UserSearch, CalendarPlus, CalendarX2,
   CalendarClock, BellRing, CalendarCheck, CheckCircle2,
   AlertTriangle, Loader2, RotateCcw, ChevronRight,
+  PhoneCall, RefreshCw,
 } from "lucide-react";
 
 const VOICE_AGENT_PHONE = "+12296090223";
@@ -812,6 +813,164 @@ function HowItWorksPipeline() {
 }
 
 /* ═══════════════════════════════════════
+   Recent Calls Panel
+═══════════════════════════════════════ */
+interface CallLogEntry {
+  id: number;
+  calledAt: string;
+  patientPhone: string | null;
+  intent: string;
+  outcome: string;
+}
+
+const INTENT_LABELS: Record<string, string> = {
+  patient_lookup:         "Patient Lookup",
+  book_appointment:       "Book Appointment",
+  cancel_appointment:     "Cancel Appointment",
+  reschedule_appointment: "Reschedule Appointment",
+};
+
+const OUTCOME_STYLES: Record<string, { label: string; cls: string }> = {
+  booked:      { label: "Booked",      cls: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" },
+  cancelled:   { label: "Cancelled",   cls: "bg-destructive/10 border-destructive/30 text-destructive" },
+  rescheduled: { label: "Rescheduled", cls: "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" },
+  info:        { label: "Info",        cls: "bg-primary/10 border-primary/30 text-primary" },
+};
+
+function formatTs(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${date}, ${time}`;
+}
+
+function RecentCallsPanel() {
+  const [calls, setCalls] = useState<CallLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function fetchCalls(isManual = false) {
+    if (isManual) setRefreshing(true);
+    try {
+      const res = await fetch("/api/agents/hospital-receptionist/call-log");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json() as { calls: CallLogEntry[] };
+      setCalls(json.calls ?? []);
+      setError(null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load call log");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
+    void fetchCalls();
+    const interval = setInterval(() => fetchCalls(), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-display font-semibold">Recent Calls</h2>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-primary/5 border-primary/20 text-primary">
+            Live
+          </span>
+        </div>
+        <button
+          onClick={() => fetchCalls(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+          Refresh
+        </button>
+      </div>
+
+      <div className="rounded-xl border border-border/50 overflow-hidden bg-card/40 backdrop-blur-sm">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-muted/10">
+          <PhoneCall className="w-3.5 h-3.5 text-primary" />
+          <span className="font-mono text-xs text-primary uppercase tracking-widest">Call Log</span>
+          {!loading && calls.length > 0 && (
+            <span className="ml-auto text-[10px] text-muted-foreground font-mono">{calls.length} entries</span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading call history…
+          </div>
+        ) : error ? (
+          <div className="flex items-center gap-2 px-4 py-8 text-sm text-destructive">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        ) : calls.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+            <PhoneCall className="w-8 h-8 text-muted-foreground/40 mb-1" />
+            <p className="text-sm text-muted-foreground">No calls recorded yet.</p>
+            <p className="text-xs text-muted-foreground/60">Use the demo console above or call the voice agent to see entries here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm">
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-4 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">#</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Timestamp</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Patient Phone</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Intent</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calls.map((call, idx) => {
+                  const outcome = OUTCOME_STYLES[call.outcome] ?? { label: call.outcome, cls: "bg-muted/20 border-border/50 text-muted-foreground" };
+                  return (
+                    <motion.tr
+                      key={call.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                      className={cn(
+                        "border-b border-border/20 transition-colors hover:bg-primary/3",
+                        idx % 2 === 0 ? "bg-background/20" : "bg-muted/5"
+                      )}
+                    >
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground/60">{call.id}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {formatTs(call.calledAt)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-xs">
+                        {call.patientPhone ?? <span className="text-muted-foreground/50">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-foreground/80 whitespace-nowrap">
+                        {INTENT_LABELS[call.intent] ?? call.intent}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-mono font-medium", outcome.cls)}>
+                          {outcome.label}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════
    Main Export
 ═══════════════════════════════════════ */
 const TABS = [
@@ -876,6 +1035,7 @@ export function HospitalReceptionistPage() {
       </section>
 
       <HowItWorksPipeline />
+      <RecentCallsPanel />
     </div>
   );
 }

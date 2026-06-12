@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
-import { db, agentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, agentsTable, hospitalCallLogTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -166,6 +166,31 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
   }
 });
 
+/* ── Hospital Receptionist — call log GET ── */
+router.get("/agents/hospital-receptionist/call-log", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(hospitalCallLogTable)
+    .orderBy(desc(hospitalCallLogTable.calledAt))
+    .limit(50);
+  res.json({ calls: rows });
+});
+
+/* ── Helpers for call-log ── */
+function maskPhone(phone: unknown): string | null {
+  if (typeof phone !== "string" || !phone.trim()) return null;
+  const p = phone.trim();
+  if (p.length <= 4) return "****";
+  return p.slice(0, 3) + "*".repeat(Math.max(p.length - 5, 2)) + p.slice(-2);
+}
+
+const ACTION_OUTCOME: Record<string, string> = {
+  patient_lookup:         "info",
+  book_appointment:       "booked",
+  cancel_appointment:     "cancelled",
+  reschedule_appointment: "rescheduled",
+};
+
 /* ── Hospital Receptionist — multi-action route ── */
 router.post("/agents/hospital-receptionist/trigger", requireAuth, async (req, res): Promise<void> => {
   const { action, args = {} } = req.body as { action?: string; args?: Record<string, unknown> };
@@ -222,6 +247,14 @@ router.post("/agents/hospital-receptionist/trigger", requireAuth, async (req, re
         try { d.appointments = JSON.parse(d.appointments); } catch { /* leave as string */ }
       }
     }
+
+    // Log this call to the call log table (fire-and-forget)
+    const rawPhone = args["phone_number"] ?? args["patient_phone"] ?? null;
+    const maskedPhone = maskPhone(rawPhone);
+    const outcome = ACTION_OUTCOME[action] ?? "info";
+    db.insert(hospitalCallLogTable)
+      .values({ intent: action, outcome, patientPhone: maskedPhone })
+      .catch(err => console.error("[HospitalReceptionist] call-log insert failed:", err));
 
     res.json({ success: true, data });
   } catch (err: unknown) {
