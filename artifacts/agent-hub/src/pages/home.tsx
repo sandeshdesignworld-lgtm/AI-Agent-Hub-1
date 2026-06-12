@@ -64,7 +64,7 @@ const AGENT_META: Record<string, {
   "linkedin-management": {
     category: "Multi-Agent / Social",
     status: "Details Available",
-    tags: ["Content Planning", "Profile Optimization", "Outreach"],
+    tags: ["LinkedIn Automation", "Content Creation", "Thought Leadership"],
     icon: <Network className="w-5 h-5" />,
   },
 };

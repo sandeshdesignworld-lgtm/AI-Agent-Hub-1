@@ -247,28 +247,34 @@ const agents = [
   },
   {
     slug: "linkedin-management",
-    name: "LinkedIn Management Multi Agent",
-    shortDescription: "Autonomous multi-agent system that grows your LinkedIn presence, generates content, and nurtures your network.",
+    name: "LinkedIn Thought Leadership Agent",
+    shortDescription: "AI-powered content creation assistant that transforms ideas into thought leadership posts, visual concepts, approval-ready drafts, and published LinkedIn content.",
     description:
-      "The LinkedIn Management Multi Agent is a sophisticated system of coordinated AI agents working in concert to maximize your professional presence. One agent analyzes trending content in your industry, another drafts and schedules posts, a third monitors and responds to comments, and a fourth identifies and engages with strategic connections — all autonomously, all in your voice.",
+      "The LinkedIn Thought Leadership Agent is an AI-powered content creation and publishing assistant designed for founders, executives, consultants, and professionals who want to build authority on LinkedIn.\nThe agent converts raw topic ideas into structured thought leadership content by combining strategic content planning, expert copywriting, visual ideation, quality review, approval workflows, and automated publishing. By handling the entire content lifecycle, the agent helps professionals maintain a consistent and impactful LinkedIn presence without spending hours creating content manually.",
     howItWorks:
-      "The orchestrator agent coordinates four specialized sub-agents: (1) Content Intelligence Agent — scans industry news, identifies trending topics, suggests content angles. (2) Content Creator Agent — drafts posts, articles, and comments in your voice. (3) Engagement Agent — monitors notifications, responds to comments, likes relevant posts. (4) Network Growth Agent — identifies ideal connections, sends personalized outreach. All agents report to a central dashboard.",
+      "The agent begins by retrieving pending content topics from a centralized content repository. It then creates a strategic content framework, identifying the problem, context, core insight, practical recommendations, common mistakes, and desired outcomes associated with the topic. The framework is transformed into a professional LinkedIn post designed to establish authority and encourage engagement. The workflow simultaneously generates visual concepts and image-generation prompts to support the post. Content and visuals are routed through a quality control and approval process before being published directly to LinkedIn. All published assets and statuses are automatically recorded for future reference and reporting.",
     requirements:
-      "LinkedIn API credentials or browser automation authorization, personal brand guidelines and writing samples (for voice matching), target audience definition, engagement rules and boundaries, posting schedule preferences.",
+      "LinkedIn Integration, Google Sheets Content Repository, Strategic Content Framework Engine, AI Copywriting Workflow, Visual Concept Generation, Image Creation Pipeline, Human Approval Workflow, Automated Publishing System",
     expectedOutput:
-      "Content calendar with drafted posts, engagement analytics (impressions, comments, connections made), network growth metrics, top-performing content analysis, and monthly personal brand health report.",
+      "• LinkedIn thought leadership posts\n• Strategic content frameworks\n• Professional storytelling content\n• Visual content concepts\n• AI image generation prompts\n• Publish-ready social media assets\n• Human approval workflows\n• Automated LinkedIn publishing\n• Content history tracking\n• Content performance preparation",
     sampleExamples: [
       {
-        title: "Weekly Content Generation",
-        input: "Generate this week's LinkedIn content plan for a senior product manager in FinTech.",
+        title: "Thought Leadership Post",
+        input: "Why AI projects fail inside enterprises",
         output:
-          "Week Plan: Monday — Thought leadership post on embedded finance trends (estimated 800 impressions). Wednesday — Short carousel: '5 metrics every PM should track' (high engagement format). Friday — Personal story: Lesson from a failed product launch (authentic content, usually 2-3x normal reach). 3 strategic comments drafted for posts by VCs in your target network. 8 personalized connection requests to FinTech founders. All posts scheduled. Review and approve?",
+          "Most AI projects don't fail because of technology.\n\nThey fail because organizations mistake experimentation for execution.\n\nThe real challenge begins after the proof of concept...\n• Align business outcomes before selecting models\n• Define ownership early\n• Build adoption plans alongside deployment\n\nThe companies succeeding with AI aren't moving faster.\nThey're executing with more discipline.\n\nWhat do you think is the biggest reason enterprise AI initiatives struggle?",
       },
       {
-        title: "Network Growth Campaign",
-        input: "I want to connect with 50 CTOs in the healthcare tech space this month.",
+        title: "Visual Concept Generation",
+        input: "Scaling AI Operations",
         output:
-          "Healthcare CTO Network Campaign initiated. Found 143 qualifying CTOs matching your criteria. Strategy: Week 1-2: Connect with 25 (personalized messages referencing their recent posts). Week 3-4: Connect with remaining 25 after warming up with content engagement. Drafted message template: 'Hi [Name], your post on [recent_topic] resonated — we're solving similar challenges at [your_company]. Would love to connect.' Projected acceptance rate: 35-45% based on profile strength. First batch ready for your approval.",
+          "Visual Concept:\nA modern control tower overlooking multiple AI systems operating across an organization.\n\nSymbolism:\n• Control tower = governance\n• Multiple connected systems = scale\n• Clear visibility = operational maturity\n\nStyle:\nEditorial photography with cinematic lighting and professional business aesthetics.",
+      },
+      {
+        title: "Publishing Workflow",
+        input: "Publish approved thought leadership content to LinkedIn.",
+        output:
+          "Content Status: Approved\nImage Generated: Yes\nPublishing Channel: LinkedIn\nPublication Status: Published Successfully\nContent Logged: Complete",
       },
     ],
     order: 8,

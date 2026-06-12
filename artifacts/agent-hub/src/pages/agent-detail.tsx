@@ -21,6 +21,7 @@ const AGENT_ID_DISPLAY: Record<string, string> = {
   "deadline-tracker": "DL-TRK-001",
   "customer-support": "CS-CARE-001",
   "hospital-receptionist": "HOSP-REC-001",
+  "linkedin-management": "LINKEDIN-TL-001",
 };
 
 const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
@@ -29,6 +30,7 @@ const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
   "deadline-tracker": "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
   "customer-support": "Automatically understands customer inquiries, routes them intelligently, and delivers professional support responses in real time.",
   "hospital-receptionist": "Provides patients with appointment scheduling, rescheduling, cancellations, doctor information, and hospital assistance through a conversational voice experience.",
+  "linkedin-management": "Transforms content ideas into high-quality LinkedIn thought leadership posts, visual concepts, and publish-ready content through an AI-powered content creation workflow.",
 };
 
 /* ── Expense Tracker constants ── */
