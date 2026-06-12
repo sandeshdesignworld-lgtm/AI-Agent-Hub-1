@@ -257,6 +257,8 @@ const agents = [
       "LinkedIn Integration, Google Sheets Content Repository, Strategic Content Framework Engine, AI Copywriting Workflow, Visual Concept Generation, Image Creation Pipeline, Human Approval Workflow, Automated Publishing System",
     expectedOutput:
       "• LinkedIn thought leadership posts\n• Strategic content frameworks\n• Professional storytelling content\n• Visual content concepts\n• AI image generation prompts\n• Publish-ready social media assets\n• Human approval workflows\n• Automated LinkedIn publishing\n• Content history tracking\n• Content performance preparation",
+    displayId: "LINKEDIN-TL-001",
+    tagline: "Transforms content ideas into high-quality LinkedIn thought leadership posts, visual concepts, and publish-ready content through an AI-powered content creation workflow.",
     sampleExamples: [
       {
         title: "Thought Leadership Post",
