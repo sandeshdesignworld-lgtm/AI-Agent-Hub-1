@@ -36,6 +36,8 @@ const agents = [
           "Subject: Weekly Expense Intelligence Report\n\nHi,\n\nYour automated weekly expense report is ready.\n\nTotal Spend This Week: ₹10,500\n\nTop-3 Categories:\n1. Office Supplies — ₹4,500 (42.9%)\n2. Transport — ₹2,800 (26.7%)\n3. Entertainment — ₹1,100 (10.5%)\n\nTrend: Spend is 5.3% above the 4-week average of ₹9,975.\n\nAI Observations:\n• Office Supplies is the dominant spend — verify if procurement was planned\n• Transport entries are elevated this week\n• Recurring categories (Utilities, Food) are within normal range\n\nThis is a ready-to-send report generated automatically by the Expense Intelligence Agent.",
       },
     ],
+    displayId: "FIN-EXP-001",
+    tagline: "Automatically analyzes weekly spending, identifies financial patterns, and delivers AI-generated expense reports directly to your inbox.",
     webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/expense-tracker",
     order: 1,
   },
@@ -71,6 +73,8 @@ const agents = [
           "Subject: Task Companion Agent — Daily Deadline Summary\n\nHi,\n\nYour automated daily deadline report is ready.\n\nTask Overview:\n• Total Pending Tasks: 8\n• 🔴 Overdue: 2 tasks requiring immediate attention\n• 🟠 Due Today: 1 task\n• 🟡 Upcoming: 5 tasks\n\nPriority Breakdown:\n• High Priority: 3 tasks\n• Medium Priority: 3 tasks\n• Low Priority: 2 tasks\n\nAI Observations:\n• 2 overdue tasks detected — immediate action recommended\n• High-priority upcoming tasks should be scheduled for review\n• No blockers identified for tasks due later in the week\n\nThis report was generated automatically by the Task Companion Agent.",
       },
     ],
+    displayId: "DL-TRK-001",
+    tagline: "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
     webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/deadline-tracker",
     order: 2,
   },
@@ -115,6 +119,8 @@ const agents = [
         }, null, 2),
       },
     ],
+    displayId: "HR-ATS-001",
+    tagline: "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
     webhookUrl: "https://hook.eu2.make.com/z3htgslpiry2cvi5cxxa133f2uvcycim",
     order: 3,
   },
@@ -158,6 +164,8 @@ const agents = [
       "Gmail integration\nIncoming email monitoring\nCustomer support knowledge base\nFinancial policy knowledge repository\nProduct support documentation\nOpenAI language model access\nAutomated email response system\nCustomer communication workflows",
     expectedOutput:
       "The Help Desk Agent generates:\n• Automated customer email responses\n• Billing and refund assistance\n• Product support acknowledgments\n• General inquiry responses\n• Customer issue classification\n• Knowledge-based support answers\n• Professional email communications\n• Support request routing\n• AI-generated customer assistance\n• Consistent brand-aligned responses",
+    displayId: "CS-CARE-001",
+    tagline: "Automatically understands customer inquiries, routes them intelligently, and delivers professional support responses in real time.",
     sampleExamples: [
       {
         title: "Billing Inquiry",

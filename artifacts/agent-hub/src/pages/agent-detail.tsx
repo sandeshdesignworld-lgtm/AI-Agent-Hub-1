@@ -15,21 +15,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 
-const AGENT_ID_DISPLAY: Record<string, string> = {
-  "hr-agent": "HR-ATS-001",
-  "expense-tracker": "FIN-EXP-001",
-  "deadline-tracker": "DL-TRK-001",
-  "customer-support": "CS-CARE-001",
-  "hospital-receptionist": "HOSP-REC-001",
-};
-
-const AGENT_TAGLINE_DISPLAY: Record<string, string> = {
-  "hr-agent": "Automatically evaluates, scores, and shortlists AI candidates using ATS-style screening and hiring intelligence.",
-  "expense-tracker": "Automatically analyzes weekly spending, identifies financial patterns, and delivers AI-generated expense reports directly to your inbox.",
-  "deadline-tracker": "Tracks tasks and deadlines from Google Sheets. Filters pending tasks, classifies them as Today / Upcoming / Overdue using AI, and sends a formatted HTML digest email on demand.",
-  "customer-support": "Automatically understands customer inquiries, routes them intelligently, and delivers professional support responses in real time.",
-  "hospital-receptionist": "Provides patients with appointment scheduling, rescheduling, cancellations, doctor information, and hospital assistance through a conversational voice experience.",
-};
 
 /* ── Expense Tracker constants ── */
 const EXPENSE_CATEGORIES = [
@@ -610,10 +595,10 @@ export default function AgentDetail() {
               </div>
               <div>
                 <h1 className="text-4xl font-display font-bold text-foreground">{agent.name}</h1>
-                <p className="text-sm font-mono text-primary">ID_REF: {agent.displayId ?? AGENT_ID_DISPLAY[agent.slug] ?? agent.slug.toUpperCase()}</p>
+                <p className="text-sm font-mono text-primary">ID_REF: {agent.displayId ?? agent.slug.toUpperCase()}</p>
               </div>
             </div>
-            <p className="text-xl text-muted-foreground max-w-2xl">{agent.tagline ?? AGENT_TAGLINE_DISPLAY[agent.slug] ?? agent.shortDescription}</p>
+            <p className="text-xl text-muted-foreground max-w-2xl">{agent.tagline ?? agent.shortDescription}</p>
           </div>
         </div>
 
