@@ -150,6 +150,8 @@ const agents = [
           "Dr. Chen's next available morning slots: Wednesday 9:30AM, Thursday 8:45AM, Friday 10:00AM. Your insurance is verified for this visit. Booking Wednesday 9:30AM as requested. Appointment confirmation sent to your email. Reminder set for 24h and 2h before. Do you need directions to the clinic?",
       },
     ],
+    displayId: "SCH-BOOK-001",
+    tagline: "Handles all aspects of scheduling — from finding the right time slot across multiple calendars to sending confirmations, reminders, and follow-ups.",
     order: 4,
   },
   {
@@ -214,6 +216,8 @@ const agents = [
           "Based on your transcript, you still need: 1 algorithms course, 1 systems course, 2 CS electives. Available next semester that fit: CS401 (Advanced Algorithms, MWF 10am — Prof. Lee, 4.8 rating), CS415 (Operating Systems, TTh 2pm), CS450 (Machine Learning, MWF 2pm — HIGHLY recommended for your AI track). Registration opens Nov 1 for your class year. Want me to add these to your watchlist?",
       },
     ],
+    displayId: "EDU-CAMP-001",
+    tagline: "Your intelligent university assistant — schedules, resources, events, and campus navigation unified in one place.",
     order: 6,
   },
   {
