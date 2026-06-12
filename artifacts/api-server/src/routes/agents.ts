@@ -73,7 +73,7 @@ router.get("/agents/:slug", async (req, res): Promise<void> => {
 
 /* ── HR Bot — test route: GET /api/agents/hr-agent/test ── */
 router.get("/agents/hr-agent/test", requireAuth, async (req, res): Promise<void> => {
-  const HR_WEBHOOK = "https://hook.eu2.make.com/ca8p23nxzh06qnn3b4y5zi5m4h58ftt7";
+  const HR_WEBHOOK = "https://hook.eu2.make.com/z3htgslpiry2cvi5cxxa133f2uvcycim";
   console.log("[HR Test] Pinging Make.com webhook with empty POST...");
   try {
     const r = await fetch(HR_WEBHOOK, { method: "POST", signal: AbortSignal.timeout(10_000) });
