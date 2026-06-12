@@ -1,0 +1,61 @@
+I have uploaded a PDF containing the finalized content for the **LinkedIn Thought Leadership Agent**.
+
+IMPORTANT:
+This update should apply **ONLY to the LinkedIn Thought Leadership Agent**. Do not modify any other agent pages, cards, content, configurations, routes, components, workflows, or data files in the application.
+
+Your task is to:
+
+1. Read the uploaded PDF completely and extract all content.
+2. Locate the existing LinkedIn Thought Leadership Agent configuration and detail page.
+3. Replace all placeholder or dummy content with the content from the PDF.
+4. Preserve the existing UI design, layout, styling, spacing, typography, icons, animations, and component structure.
+5. Update only content-related fields.
+
+Map the PDF content to the following sections:
+
+* Agent Name
+* Agent ID
+* Hero Tagline
+* Overview
+* System Requirements
+* Operational Protocol
+
+  * How It Works
+  * Expected Output
+* Output Samples
+* Agent Card Description
+* Agent Tags
+* Sidebar Requirements List
+
+Requirements:
+
+* Do not rewrite, summarize, or paraphrase the PDF content.
+* Use the content exactly as provided in the PDF.
+* Do not create new sections.
+* Do not create new UI components.
+* Do not modify functionality, LinkedIn integrations, publishing workflows, approval flows, AI generation logic, or automations.
+* Do not change routing, navigation, styling, or page structure.
+* Maintain existing formatting for paragraphs, bullet points, lists, sample outputs, and code blocks.
+* If content is stored in JSON, TypeScript, JavaScript, React components, configuration files, or data files, update the appropriate source files accordingly.
+* Ensure the homepage Agent Card content matches the detailed agent page content.
+
+CRITICAL SCOPE LIMITATION:
+
+* Modify ONLY the LinkedIn Thought Leadership Agent.
+* Do NOT update the AI Resume Screening Agent.
+* Do NOT update the Expense Intelligence Agent.
+* Do NOT update the Task Companion Agent.
+* Do NOT update the Help Desk Agent.
+* Do NOT update the Campus Concierge Agent.
+* Do NOT update the Hospital Receptionist Agent.
+* Do NOT update the Appointment Booking Agent.
+* Do NOT modify any shared templates unless the change affects only the LinkedIn Thought Leadership Agent content.
+* Do NOT alter any other cards displayed on the AgentHub homepage.
+
+After completion:
+
+1. Provide a list of all modified files.
+2. Explain what was updated in each file.
+3. Confirm that only the LinkedIn Thought Leadership Agent was modified.
+4. Verify that no other agent content, functionality, workflow, automation, or UI was changed.
+5. Confirm that the agent name displayed everywhere is "LinkedIn Thought Leadership Agent".
