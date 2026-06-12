@@ -261,10 +261,10 @@ const agents = [
   },
   {
     slug: "linkedin-management",
-    name: "LinkedIn Thought Leadership Agent",
-    shortDescription: "AI-powered content creation assistant that transforms ideas into thought leadership posts, visual concepts, approval-ready drafts, and published LinkedIn content.",
+    name: "LinkedIn Management Multi Agent",
+    shortDescription: "Autonomous multi-agent LinkedIn content system — 4 specialized AI agents transform your topic into a polished post, custom visual, and LinkedIn publication with your approval.",
     description:
-      "The LinkedIn Thought Leadership Agent is an AI-powered content creation and publishing assistant designed for founders, executives, consultants, and professionals who want to build authority on LinkedIn.\nThe agent converts raw topic ideas into structured thought leadership content by combining strategic content planning, expert copywriting, visual ideation, quality review, approval workflows, and automated publishing. By handling the entire content lifecycle, the agent helps professionals maintain a consistent and impactful LinkedIn presence without spending hours creating content manually.",
+      "Autonomous multi-agent LinkedIn content system. Submit a topic and 4 specialized AI agents work in sequence: a Structure & Logic Designer builds the teaching blueprint, a Draft Copywriter writes the post, a Style & Compliance Editor polishes it, and an Image Architect generates a custom visual. The final draft is sent to your email for human approval — approve to auto-publish to LinkedIn, or reject to discard. Powered by n8n workflow automation with OpenAI GPT models.",
     howItWorks:
       "The agent begins by retrieving pending content topics from a centralized content repository. It then creates a strategic content framework, identifying the problem, context, core insight, practical recommendations, common mistakes, and desired outcomes associated with the topic. The framework is transformed into a professional LinkedIn post designed to establish authority and encourage engagement. The workflow simultaneously generates visual concepts and image-generation prompts to support the post. Content and visuals are routed through a quality control and approval process before being published directly to LinkedIn. All published assets and statuses are automatically recorded for future reference and reporting.",
     requirements:

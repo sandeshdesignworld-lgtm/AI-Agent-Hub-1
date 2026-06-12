@@ -355,6 +355,57 @@ router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): P
   }
 });
 
+/* ── LinkedIn Management — n8n multi-agent content pipeline ── */
+router.post("/agents/linkedin-management/trigger", requireAuth, async (req, res): Promise<void> => {
+  const body = req.body as { topic?: string; category?: string; audience?: string };
+
+  if (!body.topic || typeof body.topic !== "string" || !body.topic.trim()) {
+    res.status(400).json({ error: "topic is required and must be a non-empty string" });
+    return;
+  }
+
+  const payload = {
+    Topic: body.topic.trim(),
+    Category: (body.category?.trim()) || "General Professional",
+    Audience: (body.audience?.trim()) || "Professionals and business leaders",
+    Status: "Pending",
+  };
+
+  req.log.info({ topic: payload.Topic }, "LinkedIn Management content pipeline triggered");
+
+  try {
+    const n8nRes = await fetch("https://n8n.srv1042888.hstgr.cloud/webhook/linkedin-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    const responseText = await n8nRes.text();
+    console.log(`[LinkedIn] n8n response status=${n8nRes.status} body=${responseText.slice(0, 300)}`);
+
+    let data: Record<string, unknown> = {};
+    try { data = JSON.parse(responseText); } catch { /* not JSON — use fallback */ }
+
+    if (!n8nRes.ok) {
+      const errMsg = ((data.message ?? data.error ?? responseText) as string).toString().slice(0, 200);
+      res.status(502).json({ error: `Pipeline error: ${errMsg}` });
+      return;
+    }
+
+    if (Object.keys(data).length === 0) {
+      res.json({ status: "accepted", topic: payload.Topic, message: "Topic submitted to content pipeline" });
+      return;
+    }
+
+    res.json({ ...data, status: "accepted", topic: payload.Topic });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[LinkedIn] ERROR: ${msg}`);
+    res.status(502).json({ error: `Failed to submit to pipeline: ${msg}` });
+  }
+});
+
 router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void> => {
   const params = TriggerAgentParams.safeParse(req.params);
   if (!params.success) {
