@@ -166,6 +166,76 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
   }
 });
 
+/* ── Hospital Receptionist — multi-action route ── */
+router.post("/agents/hospital-receptionist/trigger", requireAuth, async (req, res): Promise<void> => {
+  const { action, args = {} } = req.body as { action?: string; args?: Record<string, unknown> };
+
+  const WEBHOOKS: Record<string, string> = {
+    patient_lookup:           "https://n8n.srv1042888.hstgr.cloud/webhook/patient-lookup",
+    book_appointment:         "https://n8n.srv1042888.hstgr.cloud/webhook/appintment-booking-retell",
+    cancel_appointment:       "https://n8n.srv1042888.hstgr.cloud/webhook/cancellation-booking",
+    reschedule_appointment:   "https://n8n.srv1042888.hstgr.cloud/webhook/reschedule-booking",
+  };
+
+  if (!action || !WEBHOOKS[action]) {
+    res.status(400).json({ error: `Invalid action. Must be one of: ${Object.keys(WEBHOOKS).join(", ")}` });
+    return;
+  }
+
+  const url = WEBHOOKS[action];
+  req.log.info({ action }, "Hospital Receptionist webhook triggered");
+  console.log(`[HospitalReceptionist] action=${action} url=${url}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60_000);
+
+  try {
+    const webhookResponse = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ args }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    const responseText = await webhookResponse.text();
+    console.log(`[HospitalReceptionist] action=${action} status=${webhookResponse.status} body=${responseText.slice(0, 300)}`);
+
+    if (!webhookResponse.ok) {
+      req.log.error({ action, status: webhookResponse.status, body: responseText }, "Hospital webhook returned error");
+      res.status(502).json({ error: `Webhook error ${webhookResponse.status}: ${responseText.slice(0, 200)}` });
+      return;
+    }
+
+    let data: unknown;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = { raw: responseText };
+    }
+
+    // Parse nested appointments JSON string if present
+    if (data && typeof data === "object" && "appointments" in data) {
+      const d = data as Record<string, unknown>;
+      if (typeof d.appointments === "string") {
+        try { d.appointments = JSON.parse(d.appointments); } catch { /* leave as string */ }
+      }
+    }
+
+    res.json({ success: true, data });
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[HospitalReceptionist] ERROR action=${action}: ${msg}`);
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Webhook timed out after 60 seconds" });
+    } else {
+      res.status(502).json({ error: `Webhook request failed: ${msg}` });
+    }
+  }
+});
+
 router.post("/agents/:slug/trigger", requireAuth, async (req, res): Promise<void> => {
   const params = TriggerAgentParams.safeParse(req.params);
   if (!params.success) {

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 
 const AGENT_ID_DISPLAY: Record<string, string> = {
   "hr-agent": "HR-ATS-001",
@@ -359,6 +360,7 @@ export default function AgentDetail() {
   const isExpenseTracker = slug === "expense-tracker";
   const isDeadlineTracker = slug === "deadline-tracker";
   const isHRAgent = slug === "hr-agent";
+  const isHospitalReceptionist = slug === "hospital-receptionist";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -574,6 +576,19 @@ export default function AgentDetail() {
           <p className="text-destructive font-mono mb-4">AGENT_NOT_FOUND: Failed to retrieve profile for [{slug}]</p>
           <Link href="/"><Button variant="outline">Return to Hub</Button></Link>
         </div>
+      </div>
+    );
+  }
+
+  if (isHospitalReceptionist) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <Link href="/">
+          <Button variant="ghost" className="mb-8 pl-0 hover:bg-transparent hover:text-primary gap-2 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to Registry
+          </Button>
+        </Link>
+        <HospitalReceptionistPage />
       </div>
     );
   }
