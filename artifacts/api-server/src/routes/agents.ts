@@ -305,10 +305,17 @@ router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): P
     return;
   }
 
-  console.log(`[CampusConcierge] Triggering Bolna call to ${normalised} with agent ${agentId}`);
   req.log.info({ phone: normalised }, "Campus Concierge Bolna call triggered");
 
   try {
+    console.log('Bolna request:', {
+      url: 'https://api.bolna.ai/call',
+      agent_id: process.env.BOLNA_AGENT_ID,
+      apiKeyExists: !!process.env.BOLNA_API_KEY,
+      apiKeyPrefix: process.env.BOLNA_API_KEY?.substring(0, 8) + '...',
+      recipient_phone_number: normalised,
+    });
+
     const bolnaRes = await fetch("https://api.bolna.ai/call", {
       method: "POST",
       headers: {
@@ -322,14 +329,14 @@ router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): P
       signal: AbortSignal.timeout(20_000),
     });
 
-    const responseText = await bolnaRes.text();
-    console.log(`[CampusConcierge] Bolna response status=${bolnaRes.status} body=${responseText.slice(0, 300)}`);
+    const rawText = await bolnaRes.text();
+    console.log('Bolna raw response:', { status: bolnaRes.status, body: rawText });
 
     let data: Record<string, unknown> = {};
-    try { data = JSON.parse(responseText); } catch { data = { raw: responseText }; }
+    try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
     if (!bolnaRes.ok) {
-      const errMsg = (data.message ?? data.error ?? responseText).toString().slice(0, 200);
+      const errMsg = (data.message ?? data.error ?? rawText).toString().slice(0, 200);
       res.status(502).json({ error: `Bolna error: ${errMsg}` });
       return;
     }
