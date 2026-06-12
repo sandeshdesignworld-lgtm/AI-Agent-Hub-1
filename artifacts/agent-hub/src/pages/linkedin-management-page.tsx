@@ -91,8 +91,14 @@ export function LinkedInManagementPage() {
   const [error, setError]               = useState<string | null>(null);
   const [submittedTopic, setSubmittedTopic] = useState("");
 
-  const simulationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const formRef = useRef<HTMLDivElement>(null);
+  const simulationRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const formRef        = useRef<HTMLDivElement>(null);
+  const topicInputRef  = useRef<HTMLInputElement>(null);
+
+  function scrollToForm() {
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => topicInputRef.current?.focus(), 400);
+  }
 
   const isCustom   = category === "Custom...";
   const effectiveCat = isCustom ? (customCategory.trim() || "General Professional") : category;
@@ -165,6 +171,12 @@ export function LinkedInManagementPage() {
         <p className="text-xl text-muted-foreground max-w-2xl">
           Submit a topic. Four AI agents collaborate to generate thought-leadership content, create a custom visual, and publish to LinkedIn — with your approval.
         </p>
+        <Button
+          onClick={scrollToForm}
+          className="gap-2 shadow-[0_0_20px_rgba(var(--primary),0.25)] hover:shadow-[0_0_30px_rgba(var(--primary),0.45)] transition-shadow"
+        >
+          <Send className="w-4 h-4" /> Initialize Agent
+        </Button>
       </div>
 
       {/* ── Pipeline flow diagram ── */}
@@ -214,6 +226,7 @@ export function LinkedInManagementPage() {
                 <div>
                   <label className={labelCls}>Topic <span className="text-primary normal-case">*</span></label>
                   <input
+                    ref={topicInputRef}
                     type="text"
                     placeholder="e.g., Why most AI projects fail before they start"
                     value={topic}
