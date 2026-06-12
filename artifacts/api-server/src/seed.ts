@@ -241,6 +241,7 @@ const agents = [
           "City Hospital is open Monday through Friday from 8 AM to 6 PM and Saturday from 9 AM to 1 PM.\nThe hospital remains closed on Sundays.",
       },
     ],
+    displayId: "HOSP-REC-001",
     order: 7,
   },
   {
@@ -306,6 +307,7 @@ async function seed() {
           requirements: sql`excluded.requirements`,
           expectedOutput: sql`excluded.expected_output`,
           sampleExamples: sql`excluded.sample_examples`,
+          displayId: sql`excluded.display_id`,
           webhookUrl: sql`excluded.webhook_url`,
           order: sql`excluded.order`,
         },

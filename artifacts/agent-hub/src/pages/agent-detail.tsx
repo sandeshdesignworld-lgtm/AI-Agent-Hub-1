@@ -595,7 +595,7 @@ export default function AgentDetail() {
               </div>
               <div>
                 <h1 className="text-4xl font-display font-bold text-foreground">{agent.name}</h1>
-                <p className="text-sm font-mono text-primary">ID_REF: {AGENT_ID_DISPLAY[agent.slug] ?? agent.slug.toUpperCase()}</p>
+                <p className="text-sm font-mono text-primary">ID_REF: {agent.displayId ?? AGENT_ID_DISPLAY[agent.slug] ?? agent.slug.toUpperCase()}</p>
               </div>
             </div>
             <p className="text-xl text-muted-foreground max-w-2xl">{AGENT_TAGLINE_DISPLAY[agent.slug] ?? agent.shortDescription}</p>
