@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
+import NodeFormData from "form-data";
 import { db, agentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ListAgentsResponse, GetAgentResponse, GetAgentParams, TriggerAgentParams, TriggerAgentBody } from "@workspace/api-zod";
@@ -110,9 +111,9 @@ router.post("/agents/hr-agent/trigger", requireAuth, upload.single("resume"), as
     return;
   }
 
-  const formData = new FormData();
-  const blob = new Blob([req.file.buffer], { type: "application/pdf" });
-  formData.append("resume", blob, req.file.originalname || "resume.pdf");
+  const originalFileName = req.file.originalname || "resume.pdf";
+  const formData = new NodeFormData();
+  formData.append('resume', req.file.buffer, { filename: originalFileName, contentType: 'application/pdf' });
 
   console.log(`[HR Agent] forwarding to Make.com... url=${agent.webhookUrl} fileSize=${req.file.size}`);
   req.log.info({ fileSize: req.file.size }, "Triggering HR Bot webhook");
