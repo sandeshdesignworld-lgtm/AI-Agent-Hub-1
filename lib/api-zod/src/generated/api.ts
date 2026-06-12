@@ -55,7 +55,8 @@ export const GetAgentResponse = zod.object({
 })),
   "order": zod.number(),
   "webhookUrl": zod.string().nullish(),
-  "displayId": zod.string().nullish()
+  "displayId": zod.string().nullish(),
+  "tagline": zod.string().nullish()
 })
 
 

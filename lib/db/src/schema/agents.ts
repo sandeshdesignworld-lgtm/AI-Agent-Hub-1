@@ -22,6 +22,7 @@ export const agentsTable = pgTable("agents", {
     .notNull()
     .$type<Array<{ title: string; input: string; output: string }>>(),
   displayId: text("display_id"),
+  tagline: text("tagline"),
   webhookUrl: text("webhook_url"),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })

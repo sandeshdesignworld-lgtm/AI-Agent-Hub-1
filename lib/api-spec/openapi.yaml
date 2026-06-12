@@ -243,6 +243,9 @@ components:
         displayId:
           type: string
           nullable: true
+        tagline:
+          type: string
+          nullable: true
 
     AgentTriggerInput:
       type: object

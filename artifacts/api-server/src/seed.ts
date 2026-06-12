@@ -242,6 +242,7 @@ const agents = [
       },
     ],
     displayId: "HOSP-REC-001",
+    tagline: "Provides patients with appointment scheduling, rescheduling, cancellations, doctor information, and hospital assistance through a conversational voice experience.",
     order: 7,
   },
   {
@@ -308,6 +309,7 @@ async function seed() {
           expectedOutput: sql`excluded.expected_output`,
           sampleExamples: sql`excluded.sample_examples`,
           displayId: sql`excluded.display_id`,
+          tagline: sql`excluded.tagline`,
           webhookUrl: sql`excluded.webhook_url`,
           order: sql`excluded.order`,
         },

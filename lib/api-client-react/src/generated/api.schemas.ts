@@ -36,6 +36,7 @@ export interface AgentDetail {
   order: number;
   webhookUrl?: string | null;
   displayId?: string | null;
+  tagline?: string | null;
 }
 
 export type AgentTriggerInputEntriesItem = { [key: string]: unknown };
