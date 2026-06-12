@@ -1,0 +1,94 @@
+I need to add the Campus Concierge Voice Agent to the platform. This is a voice-based AI agent powered by Bolna — users enter their phone number, click a button, and the agent CALLS THEM for a live demo. This is different from form-based agents like Expense Tracker or HR Bot.
+
+## Context
+- Agent slug: campus-concierge (already exists in the DB seed)
+- This agent runs on Bolna AI as a voice agent with India Routing enabled
+- The interaction flow: user enters phone number in UI → backend calls Bolna API → Bolna places an outbound call to the user → user talks to the Campus Concierge AI
+- Bolna API endpoint to trigger a call: POST https://api.bolna.ai/call
+- Auth: Bearer token using env var bn-95ccc7a31626487cbb0a7465f1efead2
+- Agent ID from env var: 429cec6f-f269-4fa8-aedd-7a9d44d6789c
+- The existing trigger route is: POST /api/agents/:slug/trigger (already built for expense-tracker, deadline-tracker, hr-agent, hospital-receptionist)
+
+## 1. Backend: Add campus-concierge to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a new case for slug === "campus-concierge".
+
+The frontend will send:
+{
+  "phoneNumber": "+919876543210"
+}
+
+The backend should:
+- Validate phoneNumber exists and has 10-15 digits
+- If the number doesn't start with +, prepend +91 (India default)
+- POST to https://api.bolna.ai/call with headers:
+  - Authorization: Bearer ${process.env.BOLNA_API_KEY}
+  - Content-Type: application/json
+- Body: { "agent_id": process.env.BOLNA_AGENT_ID, "recipient_phone_number": phoneNumber }
+- Bolna returns an execution_id — return it to the frontend as { executionId, status: "triggered" }
+- On error, return the Bolna error message
+
+Also add a status polling endpoint:
+
+GET /api/bolna/call-status/:executionId
+
+This should:
+- Call GET https://api.bolna.ai/executions/{executionId} with the same Bearer auth
+- Return { executionId, status, transcript, summary, duration } from the Bolna response
+- This lets the frontend poll for call completion
+
+Also add a webhook receiver:
+
+POST /api/bolna/webhook
+
+This receives POST requests from Bolna when call status changes. It should:
+- Accept any JSON body
+- Log the payload (console.log or pino logger)
+- Always respond 200 { received: true }
+- Optionally store the data in-memory keyed by execution_id for the status endpoint to use
+
+## 2. Frontend: Agent detail page for campus-concierge
+
+On the agent detail page when slug === "campus-concierge", show a "Try This Agent" section above the Overview section. This section should have:
+
+### Idle state:
+- A heading: "Try This Agent" with a Phone icon
+- Subtitle: "Enter your phone number and the Campus Concierge will call you for a live demo."
+- A phone number input with "+91" shown as a fixed prefix label on the left side of the input
+- Placeholder: "98765 43210"
+- A "Get a Call" button with a PhoneCall icon, styled with the primary color glow shadow like other action buttons
+- The button is disabled when input is empty
+
+### When "Get a Call" is clicked:
+- Replace the input area with a status card
+- Call POST /api/agents/campus-concierge/trigger with { phoneNumber: "+91" + inputValue }
+- Show states with appropriate icons:
+  - "Connecting…" with a spinner (while POST is in flight)
+  - "Ringing your phone…" with a spinner (after getting executionId back)
+  - "Call in progress…" with a spinner
+  - "Call completed" with a green checkmark
+  - "Call could not be placed" with a red X icon
+
+### Polling:
+- After receiving executionId, start polling GET /api/bolna/call-status/{executionId} every 3 seconds
+- Map the Bolna status values: "completed"/"call_completed" → completed, "in-progress"/"in_progress" → in-progress, "queued"/"scheduled"/"initiated" → ringing, "failed"/"error"/"no-answer"/"busy" → failed
+- Stop polling on completed or failed
+
+### After call completes:
+- Show duration if available (e.g., "Duration: 45s")
+- If transcript is returned, show it in a bordered panel with "TRANSCRIPT" label
+- If summary is returned, show it in a primary-tinted panel with "CALL SUMMARY" label
+- If recording_url is returned, show a small "Recording" link
+- Show a "Try Another Call" button to reset back to idle state
+
+### Styling:
+- Match the existing dark sci-fi theme with bg-card/40, border-border/50, backdrop-blur-sm
+- Use font-mono for technical labels
+- The status card should use border-primary/30 bg-primary/5 for active states, border-green-500/30 bg-green-500/5 for completed, border-destructive/30 bg-destructive/5 for failed
+- Keep it consistent with how other agent run consoles look on the platform
+
+## 3. Environment variables needed:
+- BOLNA_API_KEY — already in Replit Secrets
+- BOLNA_AGENT_ID — already in Replit Secrets
+
+No database changes needed. No OpenAPI spec changes needed for the webhook/status endpoints — they're standalone routes outside the generated API client.
