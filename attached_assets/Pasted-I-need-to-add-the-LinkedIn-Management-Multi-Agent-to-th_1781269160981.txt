@@ -1,0 +1,107 @@
+I need to add the LinkedIn Management Multi Agent to the platform. This is DIFFERENT from previous agents — it's an async multi-agent content pipeline that takes minutes to run and includes human-in-the-loop email approval. The UI submits a topic, gets an immediate acknowledgment, and shows a pipeline visualization. The actual content review happens via email.
+
+## Context
+- n8n webhook URL: PASTE_YOUR_PRODUCTION_WEBHOOK_URL_HERE
+- Agent slug: linkedin-management (already in the DB seed)
+- The existing trigger route: POST /api/agents/:slug/trigger (already exists for other agents)
+- This agent runs on n8n with 4 specialized LLM sub-agents
+
+## 1. Backend: Add linkedin-management to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a new case for slug === "linkedin-management":
+- Accept JSON body with fields: { topic: string, category?: string, audience?: string }
+- Validate that `topic` is non-empty
+- POST to the n8n webhook URL with body:
+  {
+    "Topic": body.topic,
+    "Category": body.category || "General Professional",
+    "Audience": body.audience || "Professionals and business leaders",
+    "Status": "Pending"
+  }
+- Timeout: 30 seconds (the webhook responds immediately via Respond to Webhook node)
+- Return the n8n response to the frontend as-is
+- If the webhook doesn't return meaningful JSON, return: { status: "accepted", topic: body.topic, message: "Topic submitted to content pipeline" }
+
+## 2. Seed Data Update
+
+Update the linkedin-management seed entry (use upsert or reseed):
+- Name: "LinkedIn Management Multi Agent"
+- Description: "Autonomous multi-agent LinkedIn content system. Submit a topic and 4 specialized AI agents work in sequence: a Structure & Logic Designer builds the teaching blueprint, a Draft Copywriter writes the post, a Style & Compliance Editor polishes it, and an Image Architect generates a custom visual. The final draft is sent to your email for human approval — approve to auto-publish to LinkedIn, or reject to discard. Powered by n8n workflow automation with OpenAI GPT models."
+- Status: "active"
+
+## 3. Frontend: LinkedIn Agent Detail Page
+
+Match the existing dark theme with cyan/teal accents used across ALL other agents. The page for slug === "linkedin-management" should have a completely custom content area (don't touch navbar/sidebar/layout — only the agent detail page content).
+
+### Hero Section
+- Title: "LinkedIn Content Engine"
+- Subtitle: "Submit a topic. Four AI agents collaborate to generate thought-leadership content, create a custom visual, and publish to LinkedIn — with your approval."
+- Show a visual of the 4-agent pipeline as a horizontal stepper/flow diagram:
+  Agent 1: "Structure Designer" (brain icon) →
+  Agent 2: "Draft Copywriter" (pen icon) →
+  Agent 3: "Style Editor" (sparkles icon) →
+  Agent 4: "Image Architect" (image icon) →
+  Final: "Your Approval" (mail icon) →
+  Published: "LinkedIn Post" (linkedin icon from lucide or a share icon)
+  Each agent box should have a subtle glow and connection lines between them.
+
+### Input Form Section — "Generate Content"
+A clean card with 3 fields:
+1. **Topic** (required, text input) — placeholder: "e.g., Why most AI projects fail before they start"
+2. **Category/Niche** (optional, dropdown or text) — options: "General Professional", "AI & Technology", "Leadership & Management", "Product Management", "Startups & Entrepreneurship", "Career Growth", "Marketing & Sales", "Custom..." (if Custom, show a text input)
+3. **Audience** (optional, text input) — placeholder: "e.g., CTOs, Product Managers, Founders"
+
+A "Generate Content" button (cyan themed, matching design system). Disable while processing.
+
+### When "Generate Content" is clicked:
+Show a multi-step pipeline animation (each step ~2-3 seconds with progress animation):
+1. "Submitting topic to content engine..."
+2. "Topic queued — AI agents activated"
+3. "Structure & Logic Designer is building the blueprint..."
+4. "Draft Copywriter is writing your post..."
+5. "Style Editor is polishing and formatting..."
+6. "Image Architect is creating a custom visual..."
+7. "Content ready — approval email sent!"
+
+Steps 1-2 are real (waiting for webhook response). Steps 3-7 are simulated progress (the pipeline runs async in n8n). When the webhook response comes back (step 2), show a success result card.
+
+### Result Card (after webhook response)
+Show a card with:
+- ✅ Status: "Topic Accepted" (green badge)
+- 📝 Topic: the submitted topic
+- 📧 "An approval email will be sent to your inbox once all 4 agents complete their work. This usually takes 3-5 minutes."
+- Pipeline status indicator showing all 6 stages with "In Progress" state
+- A note: "Approve from email → auto-publishes to LinkedIn. Reject → discards the draft."
+
+### Pipeline Info Section (below the form, always visible)
+Show a detailed breakdown of what each agent does:
+- Card 1: "Structure & Logic Designer" — "Analyzes the topic and creates a teaching blueprint with problem statement, core concept, practical approach, and common mistakes. Focuses on the 'why' behind the advice."
+- Card 2: "Draft Copywriter" — "Transforms the blueprint into a scroll-stopping LinkedIn post with a punchy hook, scannable formatting, and expert tone. No AI fluff, no buzzwords."
+- Card 3: "Style & Compliance Editor" — "Final polish pass — removes em dashes, kills AI clichés, adds hashtags, ensures brand consistency, and adds a strategic engagement question."
+- Card 4: "Image Architect" — "Creates a visual concept using symbolism and metaphor, then generates a professional image with OpenAI gpt-image-1-mini. No stock photos, no text-heavy overlays."
+
+Each card should use the dark card style with a colored top border (use different shades of cyan/teal/blue for visual hierarchy).
+
+### Progress Steps Animation Details
+- Use framer-motion for step transitions
+- Each step has: icon (lucide), label, and a subtle loading spinner that resolves to a checkmark
+- Steps 1-2 are tied to the actual API call. Once the response comes back, mark both as complete.
+- Steps 3-7 auto-advance every 3 seconds with the simulated progress (with a note saying "Pipeline running in background")
+- Final step shows the result card
+
+## 4. Design Requirements
+- Match the existing dark theme with cyan/teal accents used across ALL other agents
+- Use lucide-react icons: Brain, PenTool, Sparkles, Image, Mail, Send, Linkedin, CheckCircle, Clock, ArrowRight, Loader2, Network
+- Same stepper/loading animation pattern as Expense Tracker and Deadline Tracker
+- All animations use framer-motion consistent with the rest of the app
+- Mobile responsive — pipeline flow stacks vertically, form fields stack, agent cards become single column
+- Don't touch the navbar, sidebar, or overall layout — only the agent detail page content area for this specific slug
+
+## 5. Important Notes
+- The webhook body field names are PascalCase: "Topic", "Category", "Audience", "Status" (this is how n8n expects them from the Google Sheet column names)
+- The webhook returns an immediate acknowledgment — the actual content generation happens asynchronously in n8n
+- Human approval happens via email (Gmail send-and-wait), NOT on the UI
+- After approval, the post auto-publishes to LinkedIn — no UI interaction needed
+- The 4-agent pipeline visualization is the KEY differentiator of this page — make it look impressive since this is the "multi-agent" showcase
+- The "Initialize Agent" button in the sidebar (agent-detail.tsx) should route to this page's form section for this slug, not to /admin/login
+- Don't add this to the OpenAPI spec — the trigger route already exists and handles all agent slugs dynamically
