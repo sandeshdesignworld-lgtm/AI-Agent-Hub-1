@@ -1,0 +1,69 @@
+The Business Documentation Agent content has already been added to the platform.
+Now I want to make this agent fully functional by connecting it to the existing Make.com workflow.
+IMPORTANT:
+This implementation should apply ONLY to the Business Documentation Agent (the card previously named "Appointment Booking" and now renamed to "Business Documentation Agent").
+Do NOT modify any other agents, workflows, cards, pages, integrations, or functionality.
+OBJECTIVE
+When a user visits the Business Documentation Agent page and clicks the agent trigger button, the website should collect the required inputs, send them to the Make.com webhook, receive the workflow response, and display the generated result in the UI.
+TASKS
+1. Locate the Business Documentation Agent detail page and trigger button.
+2. Identify the current placeholder or dummy trigger logic.
+3. Replace the placeholder implementation with this webhook url : https://hook.eu2.make.com/mvoa8y6bbtii2y3qbm1lig5sgsk8x4go for integration.
+4. Create a clean form for collecting the required inputs before triggering the workflow.
+Suggested inputs:
+* Client Name
+* Company Name
+* Document Type
+    * Proposal
+    * Statement of Work (SOW)
+    * NDA
+    * DPA
+    * Commercial Invoice
+* Project Description
+* Budget
+* Timeline
+1. When the user submits the form:
+    * Validate required fields.
+    * Send the payload to the configured Make.com webhook endpoint.
+    * Show a loading state while the workflow is running.
+    * Handle success and error responses gracefully.
+2. On successful response:
+    * Display the generated document output in the results section.
+    * Preserve formatting returned by the workflow.
+    * Show a success message.
+3. On failure:
+    * Display a user-friendly error message.
+    * Allow the user to retry.
+CONFIGURATION
+Create a centralized configuration pattern so the Make.com webhook URL can be updated easily in the future.
+Do not hardcode webhook URLs directly inside components if a configuration file or environment variable is available.
+UI REQUIREMENTS
+* Preserve the existing design system.
+* Preserve existing styling and layout.
+* Do not redesign the page.
+* Do not modify unrelated components.
+* Match existing AgentHub UX patterns.
+* Keep the interaction consistent with future agent integrations.
+CRITICAL SCOPE LIMITATION
+Modify ONLY:
+* Business Documentation Agent page
+* Business Documentation Agent trigger flow
+* Business Documentation Agent API integration
+Do NOT modify:
+* AI Resume Screening Agent
+* Expense Intelligence Agent
+* Task Companion Agent
+* Help Desk Agent
+* Campus Concierge Agent
+* Hospital Receptionist Agent
+* LinkedIn Thought Leadership Agent
+* Shared agent functionality unless absolutely required for the integration
+AFTER IMPLEMENTATION
+Provide:
+1. List of modified files.
+2. Description of changes in each file.
+3. Make.com webhook integration location.
+4. Payload structure being sent.
+5. Response structure being handled.
+6. Confirmation that only the Business Documentation Agent was modified.
+7. Confirmation that no other agent workflows or UI components were affected.
