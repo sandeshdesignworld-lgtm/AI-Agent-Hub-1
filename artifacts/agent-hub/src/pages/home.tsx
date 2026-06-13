@@ -61,6 +61,12 @@ const AGENT_META: Record<string, {
     tags: ["LinkedIn Automation", "Content Creation", "Thought Leadership"],
     icon: <Network className="w-5 h-5" />,
   },
+  "ai-service": {
+    category: "Business Operations",
+    status: "Details Available",
+    tags: ["Document Automation", "Contract Generation", "Business Operations"],
+    icon: <FileText className="w-5 h-5" />,
+  },
 };
 
 const FILTER_CATEGORIES = [
