@@ -125,43 +125,6 @@ const agents = [
     order: 3,
   },
   {
-    slug: "appointment-booking",
-    name: "Business Documentation Agent",
-    shortDescription: "AI-powered document automation assistant that generates proposals, contracts, compliance documents, statements of work, and invoices from client requirements.",
-    description:
-      "The Business Documentation Agent is an AI-powered document automation assistant designed to streamline the creation of professional business documents. By transforming client requirements into structured, ready-to-use deliverables, the agent significantly reduces the time spent preparing proposals, agreements, and commercial documentation.\n\nWhether supporting sales teams, operations teams, consultants, or service providers, the agent ensures consistent, professional, and standardized documentation across every engagement.",
-    howItWorks:
-      "The agent receives client information, project details, budget requirements, timelines, and requested services through an intake workflow.\n\nThe submitted request is analyzed and classified to determine the appropriate document type. Based on the business context, the agent generates professional documents using predefined structures and compliance-focused templates.\n\nGenerated documents are formatted for immediate business use and can be stored, reviewed, or delivered through integrated document management systems.",
-    requirements:
-      "Client Intake Workflow, Service Classification Engine, Proposal Generation Framework, Contract Template Repository, Compliance Documentation Engine, Invoice Creation Workflow, Google Drive Integration, AI Document Generation System.",
-    expectedOutput:
-      "The Business Documentation Agent generates: Professional Services Proposals, Statements of Work (SOW), Non-Disclosure Agreements (NDA), Data Processing Agreements (DPA), Commercial Invoices, Client Engagement Documentation, Project Scope Documents, Service Delivery Agreements, Compliance Documentation, Business Contract Templates.",
-    sampleExamples: [
-      {
-        title: "Proposal Generation",
-        input: "Client requests an AI chatbot implementation project with a six-week timeline and a defined budget.",
-        output:
-          "Professional Services Proposal\n\nClient: ABC Technologies\n\nExecutive Summary\nThis proposal outlines the implementation of an AI-powered customer support solution designed to improve response times and customer satisfaction.\n\nScope of Work\n• AI Chatbot Development\n• Knowledge Base Integration\n• User Acceptance Testing\n• Deployment Support\n\nTimeline\n6 Weeks\n\nCommercials\nProject Fee: ₹4,50,000\n\nNext Steps\nProject kickoff upon approval.",
-      },
-      {
-        title: "NDA Generation",
-        input: "Client requests confidentiality documentation before project discussions.",
-        output:
-          "Mutual Non-Disclosure Agreement\n\nThis Agreement is entered into between the Parties for the purpose of evaluating potential business collaboration.\n\nConfidential Information\nAll technical, commercial, financial, and proprietary information shared during discussions shall remain confidential.\n\nTerm\nTwo years from the Effective Date.",
-      },
-      {
-        title: "Invoice Generation",
-        input: "Approved project with milestone-based billing.",
-        output:
-          "Invoice No: INV-2026-001\n\nProfessional Services\nAI Automation Consulting\n\nMilestone 1: 30%\nMilestone 2: 40%\nMilestone 3: 30%\n\nTotal Amount: ₹3,00,000\n\nPayment Terms:\nNet 15 Days",
-      },
-    ],
-    displayId: "DOC-AUTO-001",
-    tagline: "Automatically generates proposals, contracts, compliance documents, and commercial paperwork from client requirements.",
-    webhookUrl: "https://hook.eu2.make.com/mvoa8y6bbtii2y3qbm1lig5sgsk8x4go",
-    order: 4,
-  },
-  {
     slug: "customer-support",
     name: "Help Desk Agent",
     shortDescription: "AI-powered customer support assistant that classifies inquiries, retrieves relevant information, and automatically generates professional email responses.",
