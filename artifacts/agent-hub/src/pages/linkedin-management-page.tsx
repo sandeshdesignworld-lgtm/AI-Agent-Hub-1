@@ -168,6 +168,7 @@ export function LinkedInManagementPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ topic: t, category: effectiveCat, audience: audience.trim() || undefined }),
+        signal: AbortSignal.timeout(300_000),
       });
       const data = await res.json() as { error?: string; status?: string };
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);

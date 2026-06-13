@@ -378,7 +378,7 @@ router.post("/agents/linkedin-management/trigger", requireAuth, async (req, res)
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(300_000),
     });
 
     const responseText = await n8nRes.text();
