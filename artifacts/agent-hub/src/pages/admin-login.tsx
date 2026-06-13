@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAdminLogin } from "@workspace/api-client-react";
+import { useAdminLogin, getGetAuthMeQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -20,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const loginMutation = useAdminLogin();
 
   const form = useForm<LoginForm>({
@@ -37,6 +39,7 @@ export default function AdminLogin() {
           title: "Access Granted",
           description: "Authentication successful. Entering dashboard.",
         });
+        queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
         setLocation("/admin/dashboard");
       },
       onError: (error) => {
