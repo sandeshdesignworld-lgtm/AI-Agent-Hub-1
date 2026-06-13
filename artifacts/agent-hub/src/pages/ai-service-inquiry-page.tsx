@@ -131,10 +131,10 @@ export function AiServiceInquiryPage() {
             <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
               <Send className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">ID_REF: AI-SVC-001</span>
+            <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">ID_REF: DOC-AUTO-001</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-            AI Service Inquiry Agent
+            Business Documentation Agent
           </h1>
           <p className="text-muted-foreground max-w-xl leading-relaxed">
             Tell us about your project. Our AI evaluates your requirements, matches the right solution,
