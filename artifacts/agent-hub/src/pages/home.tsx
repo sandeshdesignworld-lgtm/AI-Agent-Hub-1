@@ -38,9 +38,9 @@ const AGENT_META: Record<string, {
     icon: <Users className="w-5 h-5" />,
   },
   "appointment-booking": {
-    category: "Scheduling",
+    category: "Operations",
     status: "Details Available",
-    tags: ["Scheduling", "Availability", "Booking"],
+    tags: ["Document Automation", "Contract Generation", "Business Operations"],
     icon: <Calendar className="w-5 h-5" />,
   },
   "customer-support": {
@@ -94,7 +94,7 @@ const PURPOSE_CARDS = [
 
 const SIDEBAR_PREVIEW = [
   "Dashboard", "Expense Tracker", "Deadline Tracker",
-  "HR Agent", "Appointment Booking", "Help Desk Agent",
+  "HR Agent", "Business Documentation Agent", "Help Desk Agent",
 ];
 
 export default function Home() {

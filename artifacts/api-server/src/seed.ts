@@ -126,32 +126,38 @@ const agents = [
   },
   {
     slug: "appointment-booking",
-    name: "Appointment Booking",
-    shortDescription: "Intelligent scheduling assistant that books, reschedules, and manages appointments autonomously.",
+    name: "Business Documentation Agent",
+    shortDescription: "AI-powered document automation assistant that generates proposals, contracts, compliance documents, statements of work, and invoices from client requirements.",
     description:
-      "The Appointment Booking Agent handles all aspects of scheduling — from finding the right time slot across multiple calendars to sending confirmations, reminders, and follow-ups. It understands natural language scheduling requests and optimizes appointments based on location, preferences, and availability.",
+      "The Business Documentation Agent is an AI-powered document automation assistant designed to streamline the creation of professional business documents. By transforming client requirements into structured, ready-to-use deliverables, the agent significantly reduces the time spent preparing proposals, agreements, and commercial documentation.\n\nWhether supporting sales teams, operations teams, consultants, or service providers, the agent ensures consistent, professional, and standardized documentation across every engagement.",
     howItWorks:
-      "The agent connects to Google Calendar, Outlook, or custom booking systems. When a booking request comes in, it checks all relevant calendars, proposes optimal time slots, sends invites, handles rescheduling and cancellations, and follows up with reminders and post-meeting surveys.",
+      "The agent receives client information, project details, budget requirements, timelines, and requested services through an intake workflow.\n\nThe submitted request is analyzed and classified to determine the appropriate document type. Based on the business context, the agent generates professional documents using predefined structures and compliance-focused templates.\n\nGenerated documents are formatted for immediate business use and can be stored, reviewed, or delivered through integrated document management systems.",
     requirements:
-      "Calendar API access (Google Calendar, Outlook, or Calendly), business hours configuration, service/appointment type definitions, participant contact information.",
+      "Client Intake Workflow, Service Classification Engine, Proposal Generation Framework, Contract Template Repository, Compliance Documentation Engine, Invoice Creation Workflow, Google Drive Integration, AI Document Generation System.",
     expectedOutput:
-      "Confirmed appointment notifications, calendar invites, automated reminder sequences (24h, 1h before), rescheduling confirmations, no-show alerts, and booking analytics.",
+      "The Business Documentation Agent generates: Professional Services Proposals, Statements of Work (SOW), Non-Disclosure Agreements (NDA), Data Processing Agreements (DPA), Commercial Invoices, Client Engagement Documentation, Project Scope Documents, Service Delivery Agreements, Compliance Documentation, Business Contract Templates.",
     sampleExamples: [
       {
-        title: "Multi-Person Meeting Scheduling",
-        input: "Schedule a 1-hour strategy meeting with the product and engineering leads next week.",
+        title: "Proposal Generation",
+        input: "Client requests an AI chatbot implementation project with a six-week timeline and a defined budget.",
         output:
-          "Found availability: Tuesday 2-3PM and Thursday 10-11AM work for all 3 participants. Recommending Tuesday 2PM (higher energy time, before end-of-week crunch). Invite sent to Sarah (Product) and Marcus (Engineering). Meeting room booked: Conference B. Video link added for remote option. Agenda template shared. Confirm?",
+          "Professional Services Proposal\n\nClient: ABC Technologies\n\nExecutive Summary\nThis proposal outlines the implementation of an AI-powered customer support solution designed to improve response times and customer satisfaction.\n\nScope of Work\n• AI Chatbot Development\n• Knowledge Base Integration\n• User Acceptance Testing\n• Deployment Support\n\nTimeline\n6 Weeks\n\nCommercials\nProject Fee: ₹4,50,000\n\nNext Steps\nProject kickoff upon approval.",
       },
       {
-        title: "Patient Appointment Booking",
-        input: "Book a follow-up appointment with Dr. Chen, preferably in the morning.",
+        title: "NDA Generation",
+        input: "Client requests confidentiality documentation before project discussions.",
         output:
-          "Dr. Chen's next available morning slots: Wednesday 9:30AM, Thursday 8:45AM, Friday 10:00AM. Your insurance is verified for this visit. Booking Wednesday 9:30AM as requested. Appointment confirmation sent to your email. Reminder set for 24h and 2h before. Do you need directions to the clinic?",
+          "Mutual Non-Disclosure Agreement\n\nThis Agreement is entered into between the Parties for the purpose of evaluating potential business collaboration.\n\nConfidential Information\nAll technical, commercial, financial, and proprietary information shared during discussions shall remain confidential.\n\nTerm\nTwo years from the Effective Date.",
+      },
+      {
+        title: "Invoice Generation",
+        input: "Approved project with milestone-based billing.",
+        output:
+          "Invoice No: INV-2026-001\n\nProfessional Services\nAI Automation Consulting\n\nMilestone 1: 30%\nMilestone 2: 40%\nMilestone 3: 30%\n\nTotal Amount: ₹3,00,000\n\nPayment Terms:\nNet 15 Days",
       },
     ],
-    displayId: "SCH-BOOK-001",
-    tagline: "Handles all aspects of scheduling — from finding the right time slot across multiple calendars to sending confirmations, reminders, and follow-ups.",
+    displayId: "DOC-AUTO-001",
+    tagline: "Automatically generates proposals, contracts, compliance documents, and commercial paperwork from client requirements.",
     webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/appointment-booking",
     order: 4,
   },
