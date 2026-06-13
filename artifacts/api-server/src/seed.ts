@@ -300,7 +300,7 @@ const agents = [
   },
 ];
 
-async function seed() {
+export async function seed() {
   logger.info("Starting seed...");
 
   const adminUsername = "admin";
@@ -343,10 +343,5 @@ async function seed() {
   }
 
   logger.info("Seed complete.");
-  process.exit(0);
 }
 
-seed().catch((err) => {
-  logger.error({ err }, "Seed failed");
-  process.exit(1);
-});
