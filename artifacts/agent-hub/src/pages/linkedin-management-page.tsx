@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   Brain, PenTool, Sparkles, Image, Mail, Share2,
   CheckCircle2, Loader2, RotateCcw, ArrowRight, Network,
-  AlertTriangle, Send, Clock, History,
+  AlertTriangle, Send, History, ExternalLink, Calendar,
 } from "lucide-react";
 
 type LinkedinSubmission = {
@@ -15,6 +15,13 @@ type LinkedinSubmission = {
   category: string;
   audience: string;
   status: string;
+};
+
+type WebhookResult = {
+  content?: string;
+  image_link?: string;
+  date?: string;
+  topic?: string;
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -48,18 +55,19 @@ const CATEGORIES = [
 
 /* ── 7-step pipeline progress ── */
 const PIPELINE_STEPS: { label: string; icon: typeof Brain }[] = [
-  { label: "Submitting topic to content engine...",                  icon: Send    },
-  { label: "Topic queued — AI agents activated",                     icon: Network },
+  { label: "Submitting topic to content engine...",                   icon: Send    },
+  { label: "Topic queued — AI agents activated",                      icon: Network },
   { label: "Structure & Logic Designer is building the blueprint...", icon: Brain   },
-  { label: "Draft Copywriter is writing your post...",               icon: PenTool },
-  { label: "Style Editor is polishing and formatting...",            icon: Sparkles },
-  { label: "Image Architect is creating a custom visual...",         icon: Image   },
-  { label: "Content ready — approval email sent!",                   icon: Mail    },
+  { label: "Draft Copywriter is writing your post...",                icon: PenTool },
+  { label: "Style Editor is polishing and formatting...",             icon: Sparkles },
+  { label: "Image Architect is creating a custom visual...",          icon: Image   },
+  { label: "Finalising draft and packaging output...",                icon: Mail    },
 ];
 
-/* steps 0–1 are real (API call), steps 2–6 are simulated */
-const SIMULATED_START = 2;
-const SIMULATED_INTERVAL = 3000;
+/* Advance one step every 30s — covers the 3-5 min webhook wait.
+   Step 6 is the "cap": stays active (spinner) until API responds. */
+const STEP_INTERVAL_MS = 30_000;
+const LAST_ANIMATED_STEP = PIPELINE_STEPS.length - 1; // index 6
 
 /* ── Agent info cards ── */
 const AGENT_CARDS = [
@@ -97,35 +105,29 @@ const inputCls = "w-full bg-background/60 border border-border/50 rounded-lg px-
 const labelCls = "text-xs text-muted-foreground font-mono mb-1.5 block uppercase tracking-wider";
 
 export function LinkedInManagementPage() {
-  const [topic, setTopic]               = useState("");
-  const [category, setCategory]         = useState("General Professional");
-  const [customCategory, setCustomCategory] = useState("");
-  const [audience, setAudience]         = useState("");
+  const [topic, setTopic]                     = useState("");
+  const [category, setCategory]               = useState("General Professional");
+  const [customCategory, setCustomCategory]   = useState("");
+  const [audience, setAudience]               = useState("");
 
-  /* -1 = idle, 0-6 = active step index, 7 = done */
-  const [step, setStep]                 = useState(-1);
-  const [error, setError]               = useState<string | null>(null);
-  const [submittedTopic, setSubmittedTopic] = useState("");
+  /* -1 = idle, 0–6 = active step index, 7 = done */
+  const [step, setStep]                       = useState(-1);
+  const [error, setError]                     = useState<string | null>(null);
+  const [submittedTopic, setSubmittedTopic]   = useState("");
+  const [result, setResult]                   = useState<WebhookResult | null>(null);
 
-  const [submissions, setSubmissions]   = useState<LinkedinSubmission[]>([]);
-  const [subLoading, setSubLoading]     = useState(true);
+  const [submissions, setSubmissions]         = useState<LinkedinSubmission[]>([]);
+  const [subLoading, setSubLoading]           = useState(true);
 
-  const simulationRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const formRef        = useRef<HTMLDivElement>(null);
-  const topicInputRef  = useRef<HTMLInputElement>(null);
+  const simTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const formRef       = useRef<HTMLDivElement>(null);
+  const topicInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSubmissions = useCallback(async () => {
     try {
       const res = await fetch("/api/agents/linkedin-management/submissions", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json() as LinkedinSubmission[];
-        setSubmissions(data);
-      }
-    } catch {
-      /* silent — log won't break the main UI */
-    } finally {
-      setSubLoading(false);
-    }
+      if (res.ok) setSubmissions(await res.json() as LinkedinSubmission[]);
+    } catch { /* silent */ } finally { setSubLoading(false); }
   }, []);
 
   function scrollToForm() {
@@ -133,19 +135,33 @@ export function LinkedInManagementPage() {
     setTimeout(() => topicInputRef.current?.focus(), 400);
   }
 
-  const isCustom   = category === "Custom...";
+  const isCustom     = category === "Custom...";
   const effectiveCat = isCustom ? (customCategory.trim() || "General Professional") : category;
-  const isRunning  = step >= 0 && step < PIPELINE_STEPS.length;
-  const isDone     = step >= PIPELINE_STEPS.length;
+  const isRunning    = step >= 0 && step < PIPELINE_STEPS.length;
+  const isDone       = step >= PIPELINE_STEPS.length;
 
   function stopSim() {
-    if (simulationRef.current) { clearInterval(simulationRef.current); simulationRef.current = null; }
+    if (simTimerRef.current) { clearInterval(simTimerRef.current); simTimerRef.current = null; }
   }
 
   function reset() {
     stopSim();
-    setStep(-1); setError(null); setSubmittedTopic("");
+    setStep(-1); setError(null); setSubmittedTopic(""); setResult(null);
     setTopic(""); setCategory("General Professional"); setCustomCategory(""); setAudience("");
+  }
+
+  /* Start stepping immediately; cap at LAST_ANIMATED_STEP (stays spinning until API resolves) */
+  function startSimulation() {
+    let cur = 0;
+    setStep(0);
+    simTimerRef.current = setInterval(() => {
+      cur += 1;
+      if (cur <= LAST_ANIMATED_STEP) {
+        setStep(cur);
+      }
+      /* If we've reached the last step, don't advance further — let it spin */
+      if (cur >= LAST_ANIMATED_STEP) stopSim();
+    }, STEP_INTERVAL_MS);
   }
 
   useEffect(() => {
@@ -158,9 +174,11 @@ export function LinkedInManagementPage() {
     const t = topic.trim();
     if (!t) return;
     setError(null);
+    setResult(null);
     setSubmittedTopic(t);
-    setStep(0);
+
     stopSim();
+    startSimulation();  /* animation runs DURING the API call */
 
     try {
       const res = await fetch("/api/agents/linkedin-management/trigger", {
@@ -170,22 +188,13 @@ export function LinkedInManagementPage() {
         body: JSON.stringify({ topic: t, category: effectiveCat, audience: audience.trim() || undefined }),
         signal: AbortSignal.timeout(300_000),
       });
-      const data = await res.json() as { error?: string; status?: string };
+      const data = await res.json() as { error?: string } & WebhookResult;
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
 
-      /* API responded — mark steps 0-1 done, start simulating from step 2 */
+      stopSim();
+      setResult(data);
+      setStep(PIPELINE_STEPS.length);  /* mark done */
       void fetchSubmissions();
-      setStep(SIMULATED_START);
-      let cur = SIMULATED_START;
-      simulationRef.current = setInterval(() => {
-        cur += 1;
-        if (cur >= PIPELINE_STEPS.length) {
-          stopSim();
-          setStep(PIPELINE_STEPS.length);
-        } else {
-          setStep(cur);
-        }
-      }, SIMULATED_INTERVAL);
     } catch (e: unknown) {
       stopSim();
       setStep(-1);
@@ -231,10 +240,7 @@ export function LinkedInManagementPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1, duration: 0.4 }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 px-4 py-3 rounded-xl border shadow-lg",
-                      node.bg, node.border, node.glow
-                    )}
+                    className={cn("flex flex-col items-center gap-2 px-4 py-3 rounded-xl border shadow-lg", node.bg, node.border, node.glow)}
                   >
                     <Icon className={cn("w-5 h-5", node.color)} />
                     <span className={cn("text-[10px] font-mono font-semibold whitespace-nowrap", node.color)}>
@@ -259,6 +265,7 @@ export function LinkedInManagementPage() {
         </div>
         <div className="p-6">
           <AnimatePresence mode="wait">
+
             {/* ── FORM ── */}
             {step === -1 && !error && (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
@@ -332,6 +339,7 @@ export function LinkedInManagementPage() {
             {/* ── PROGRESS + RESULT ── */}
             {(isRunning || isDone) && !error && (
               <motion.div key="progress" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+
                 {/* Steps stepper */}
                 <div className="space-y-3">
                   {PIPELINE_STEPS.map((s, i) => {
@@ -339,7 +347,6 @@ export function LinkedInManagementPage() {
                     const isPast   = isDone || i < step;
                     const isActive = !isDone && i === step;
                     const isAhead  = !isDone && i > step;
-                    const isSimulated = i >= SIMULATED_START;
                     return (
                       <motion.div
                         key={i}
@@ -363,9 +370,9 @@ export function LinkedInManagementPage() {
                         )}>
                           {s.label}
                         </span>
-                        {isSimulated && isActive && (
+                        {isActive && i === LAST_ANIMATED_STEP && (
                           <span className="text-[9px] font-mono text-muted-foreground/40 hidden sm:block shrink-0">
-                            pipeline running in background
+                            awaiting pipeline response…
                           </span>
                         )}
                       </motion.div>
@@ -373,67 +380,95 @@ export function LinkedInManagementPage() {
                   })}
                 </div>
 
-                {/* Result card — shown when done */}
-                {isDone && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                    {/* Status card */}
-                    <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-5 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
-                        <span className="font-mono text-xs text-green-400 uppercase tracking-widest font-semibold">
-                          Topic Accepted
-                        </span>
-                        <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400">
-                          ✓ Queued
-                        </span>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">📝</span>
-                          <span className="text-foreground font-medium">{submittedTopic}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">📧</span>
-                          <span className="text-foreground/80 leading-relaxed">
-                            An approval email will be sent to your inbox once all 4 agents complete their work. This usually takes 3–5 minutes.
-                          </span>
-                        </div>
-                      </div>
-                      <div className="border-t border-border/40 pt-3 text-xs text-muted-foreground font-mono">
-                        Approve from email → auto-publishes to LinkedIn. &nbsp; Reject → discards the draft.
-                      </div>
+                {/* ── RESULT CARD — real webhook content ── */}
+                {isDone && result && (
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
+
+                    {/* Status header */}
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <span className="font-mono text-xs text-green-400 uppercase tracking-widest font-semibold">
+                        Draft Generated
+                      </span>
+                      <span className="ml-auto text-[10px] font-mono px-2.5 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400">
+                        ✓ Success
+                      </span>
                     </div>
 
-                    {/* Pipeline status */}
-                    <div className="rounded-xl border border-border/50 bg-background/40 p-4">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-3">
-                        Pipeline Status
+                    {/* Topic heading */}
+                    <h3 className="text-lg font-display font-semibold text-foreground leading-snug">
+                      {result.topic ?? submittedTopic}
+                    </h3>
+
+                    {/* LinkedIn post preview */}
+                    {result.content && (
+                      <div className="rounded-xl border border-border/60 bg-background/80 overflow-hidden">
+                        <div className="px-4 py-2.5 border-b border-border/40 bg-muted/10 flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                            <Network className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold text-foreground/80 leading-none">LinkedIn Draft</div>
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">Pending approval</div>
+                          </div>
+                          <span className="ml-auto text-[9px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                            Preview
+                          </span>
+                        </div>
+                        <div className="px-5 py-4">
+                          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap font-sans">
+                            {result.content}
+                          </p>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {PIPELINE_NODES.map((node, i) => {
-                          const Icon = node.icon;
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/5 text-[11px] font-mono text-amber-400 min-w-0"
-                            >
-                              <Icon className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{node.label}</span>
-                              <Clock className="w-3 h-3 ml-auto shrink-0 opacity-60" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[10px] font-mono text-muted-foreground/50 mt-2">
-                        n8n pipeline is running asynchronously — check your email for the approval request.
-                      </p>
+                    )}
+
+                    {/* Image link button */}
+                    {result.image_link && (
+                      <a
+                        href={result.image_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 text-sm font-mono hover:bg-blue-500/20 hover:border-blue-500/50 transition-colors"
+                      >
+                        <Image className="w-4 h-4 flex-shrink-0" />
+                        View Generated Image
+                        <ExternalLink className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
+                      </a>
+                    )}
+
+                    {/* Approval note */}
+                    <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm text-amber-300/90 leading-relaxed">
+                      <Mail className="w-4 h-4 inline-block mr-1.5 -mt-0.5 flex-shrink-0" />
+                      An approval email has been sent. <strong className="font-semibold">Approve</strong> to auto-publish to LinkedIn, or <strong className="font-semibold">Reject</strong> to discard.
                     </div>
+
+                    {/* Date */}
+                    {result.date && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/50">
+                        <Calendar className="w-3 h-3" />
+                        {result.date}
+                      </div>
+                    )}
 
                     <Button variant="outline" size="sm" onClick={reset} className="gap-2 border-primary/20 hover:text-primary text-xs">
                       <RotateCcw className="w-3 h-3" /> Submit Another Topic
                     </Button>
                   </motion.div>
                 )}
+
+                {/* Fallback if webhook returned no content */}
+                {isDone && !result && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                    <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-4 text-sm text-green-400 font-mono">
+                      ✓ Topic accepted — check your email for the approval request.
+                    </div>
+                    <Button variant="outline" size="sm" onClick={reset} className="gap-2 border-primary/20 hover:text-primary text-xs">
+                      <RotateCcw className="w-3 h-3" /> Submit Another Topic
+                    </Button>
+                  </motion.div>
+                )}
+
               </motion.div>
             )}
           </AnimatePresence>
@@ -452,10 +487,7 @@ export function LinkedInManagementPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
-                className={cn(
-                  "bg-card/40 border border-border/50 border-t-2 rounded-xl p-5 backdrop-blur-sm",
-                  card.topColor
-                )}
+                className={cn("bg-card/40 border border-border/50 border-t-2 rounded-xl p-5 backdrop-blur-sm", card.topColor)}
               >
                 <div className="flex items-center gap-2.5 mb-3">
                   <Icon className={cn("w-4 h-4 flex-shrink-0", card.iconColor)} />
@@ -497,43 +529,38 @@ export function LinkedInManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {submissions.map((row, i) => (
-                    <motion.tr
-                      key={row.id}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(row.submittedAt).toLocaleString(undefined, {
-                          month: "short", day: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </td>
-                      <td className="px-4 py-3 text-foreground max-w-xs">
-                        <span className="line-clamp-2">{row.topic}</span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell text-xs">{row.category}</td>
-                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell text-xs max-w-[180px] truncate">
-                        {row.audience || <span className="opacity-40">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={cn(
-                          "text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full border",
-                          STATUS_STYLE[row.status] ?? "text-muted-foreground border-border/40 bg-muted/20"
-                        )}>
-                          {row.status}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
+                  {submissions.map((row, i) => {
+                    const statusKey = row.status?.toLowerCase() ?? "pending";
+                    const badgeCls  = STATUS_STYLE[statusKey] ?? STATUS_STYLE.pending;
+                    return (
+                      <motion.tr
+                        key={row.id}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors"
+                      >
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(row.submittedAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-foreground/80 max-w-[200px] truncate">{row.topic}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">{row.category}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs hidden md:table-cell max-w-[150px] truncate">{row.audience}</td>
+                        <td className="px-4 py-3">
+                          <span className={cn("text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border", badgeCls)}>
+                            {row.status}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
       </div>
+
     </div>
   );
 }
