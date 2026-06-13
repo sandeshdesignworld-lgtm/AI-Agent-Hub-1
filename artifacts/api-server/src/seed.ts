@@ -158,7 +158,7 @@ const agents = [
     ],
     displayId: "DOC-AUTO-001",
     tagline: "Automatically generates proposals, contracts, compliance documents, and commercial paperwork from client requirements.",
-    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/appointment-booking",
+    webhookUrl: "https://hook.eu2.make.com/mvoa8y6bbtii2y3qbm1lig5sgsk8x4go",
     order: 4,
   },
   {

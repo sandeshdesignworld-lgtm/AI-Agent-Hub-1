@@ -16,6 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 import { LinkedInManagementPage } from "./linkedin-management-page";
+import { BusinessDocumentationPage } from "./business-documentation-page";
 
 
 /* ── Expense Tracker constants ── */
@@ -726,6 +727,7 @@ export default function AgentDetail() {
   const isHospitalReceptionist = slug === "hospital-receptionist";
   const isCampusConcierge = slug === "campus-concierge";
   const isLinkedInManagement = slug === "linkedin-management";
+  const isBusinessDocumentation = slug === "appointment-booking";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -967,6 +969,19 @@ export default function AgentDetail() {
           </Button>
         </Link>
         <LinkedInManagementPage />
+      </div>
+    );
+  }
+
+  if (isBusinessDocumentation) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <Link href="/">
+          <Button variant="ghost" className="mb-8 pl-0 hover:bg-transparent hover:text-primary gap-2 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to Registry
+          </Button>
+        </Link>
+        <BusinessDocumentationPage />
       </div>
     );
   }
