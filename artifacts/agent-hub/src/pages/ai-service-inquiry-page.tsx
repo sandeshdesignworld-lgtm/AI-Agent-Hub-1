@@ -43,6 +43,7 @@ interface InquiryResult {
   can_help?: string;
   matched_service?: string;
   reason?: string;
+  raw?: string;
   [key: string]: unknown;
 }
 
@@ -118,9 +119,12 @@ export function AiServiceInquiryPage() {
     setTouched({});
   }
 
-  const canHelp = result?.can_help?.toString().toUpperCase() === "YES";
+  const canHelp = result
+    ? (result.raw != null || result?.can_help?.toString().toUpperCase() === "YES")
+    : false;
   const matchedService = result?.matched_service ?? service;
   const reason = result?.reason;
+  const makeResponse = result?.raw;
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,9 +178,11 @@ export function AiServiceInquiryPage() {
                       {canHelp ? "Great news!" : "Thank you for your interest!"}
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-                      {canHelp
-                        ? `Thank you! We've received your inquiry for ${matchedService}. Our team is preparing your project documents and will reach out shortly.`
-                        : `Thank you for your interest! Unfortunately, ${reason ?? "this project falls outside our current service scope"}. We'll keep your details on file for future opportunities.`
+                      {makeResponse
+                        ? makeResponse
+                        : canHelp
+                          ? `Thank you! We've received your inquiry for ${matchedService}. Our team is preparing your project documents and will reach out shortly.`
+                          : `Thank you for your interest! Unfortunately, ${reason ?? "this project falls outside our current service scope"}. We'll keep your details on file for future opportunities.`
                       }
                     </p>
                   </div>
