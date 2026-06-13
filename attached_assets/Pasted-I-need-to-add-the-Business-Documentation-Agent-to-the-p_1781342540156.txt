@@ -1,0 +1,98 @@
+I need to add the Business Documentation Agent to the platform. This is a FORM-BASED agent — clients fill out a service inquiry form and the AI evaluates whether the agency can help, then auto-generates documents (Proposal, NDA, Invoice, DPA) if applicable.
+
+## Context
+- Agent slug: ai-service (add to DB seed if not present)
+- This agent runs on Make.com with OpenAI o4-mini for service matching and document generation
+- The interaction flow: user fills out inquiry form → backend POSTs to Make.com webhook → AI evaluates if agency can help → logs to Google Sheets → if YES: generates 4 docs (Proposal, NDA, Invoice, DPA) in Google Drive + sends email; if NO: sends polite rejection email
+- Make.com webhook URL: https://hook.eu2.make.com/8rv96172o619qcwsf9adwu7vunl4ysip
+- The existing trigger route is: POST /api/agents/:slug/trigger (already built for expense-tracker, deadline-tracker, hr-agent, hospital-receptionist, campus-concierge)
+
+## 1. Backend: Add ai-service to the trigger route
+
+In the existing POST /api/agents/:slug/trigger route, add a new case for slug === "ai-service".
+
+When this slug is hit, forward the request body as JSON to the Make.com webhook:
+- Method: POST
+- URL: https://hook.eu2.make.com/8rv96172o619qcwsf9adwu7vunl4ysip
+- Headers: { "Content-Type": "application/json" }
+- Body: the raw request body (JSON passthrough)
+
+The request body from the frontend will contain:
+{
+  "name": "John Doe",
+  "email": "john@company.com",
+  "phone": "+1 555 000 0000",
+  "service": "Machine Learning",
+  "description": "Project goals and challenges...",
+  "budget": "$10,000 - $25,000",
+  "timeline": "1-3 months"
+}
+
+The Make.com webhook returns a response. Forward it back to the frontend as-is.
+
+## 2. Frontend: Agent Detail Page — Service Inquiry Form
+
+The agent detail page for ai-service should show a professional SERVICE INQUIRY FORM (not a chat or voice UI). This is a client-facing lead generation form.
+
+### Form Fields (all fields are styled with dark theme matching existing agents):
+
+Row 1 (two columns):
+- Name * (text input, placeholder: "John Doe")
+- Email * (text input, placeholder: "john@company.com")
+
+Row 2 (two columns):
+- Phone Number (text input, placeholder: "+1 (555) 000-0000")
+- Service * (dropdown select with these exact options):
+  - Machine Learning
+  - AI Automation
+  - Predictive Analytics
+  - Conversational AI
+  - Process Optimization
+  - AI Security
+  - Custom Solution
+
+Row 3 (full width):
+- Project Description * (textarea, placeholder: "Describe your project goals, challenges, and what success looks like...", at least 4 rows tall)
+
+Row 4 (two columns):
+- Budget Range (dropdown select with these exact options):
+  - $5,000 - $10,000
+  - $10,000 - $25,000
+  - $25,000 - $50,000
+  - $50,000 - $100,000
+  - $100,000+
+- Timeline (dropdown select with these exact options):
+  - Less than 1 month
+  - 1-3 months
+  - 3-6 months
+  - 6-12 months
+  - Ongoing partnership
+
+Row 5 (full width):
+- "Send Message" button (cyan/accent colored, full width, with a send/paper-plane icon)
+
+### Form Behavior:
+- Required fields: Name, Email, Service, Project Description (marked with *)
+- Phone, Budget Range, Timeline are optional
+- On submit: POST to /api/agents/ai-service/trigger with the JSON body above
+- While waiting: show loading state on button ("Sending..." with spinner)
+- On success: show a success message card below the form with:
+  - If can_help is YES: "Thank you! We've received your inquiry for [matched_service]. Our team is preparing your project documents and will reach out shortly."
+  - If can_help is NO: "Thank you for your interest! Unfortunately, [reason]. We'll keep your details on file for future opportunities."
+- On error: show error toast/message
+
+### Form Validation:
+- Name: required, min 2 characters
+- Email: required, valid email format
+- Service: required (must select one)
+- Description: required, min 20 characters
+- Phone: optional, no strict validation
+
+## 3. DB Seed (if ai-service doesn't already exist)
+
+Add the agent to the seed data:
+- slug: "ai-service"
+- name: "AI Service Agent"
+- description: "AI-powered service inquiry agent that evaluates client projects, matches them with the right AI solutions, and auto-generates professional documents including proposals, NDAs, invoices, and data processing agreements."
+- category: "automation" (or whatever category fits the existing pattern)
+- status: "active"

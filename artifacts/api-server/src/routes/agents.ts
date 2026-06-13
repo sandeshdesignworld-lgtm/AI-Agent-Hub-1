@@ -355,6 +355,67 @@ router.post("/agents/campus-concierge/trigger", requireAuth, async (req, res): P
   }
 });
 
+/* ── AI Service Inquiry — Make.com lead evaluation + doc generation ── */
+router.post("/agents/ai-service/trigger", async (req, res): Promise<void> => {
+  const body = req.body as {
+    name?: string;
+    email?: string;
+    phone?: string;
+    service?: string;
+    description?: string;
+    budget?: string;
+    timeline?: string;
+  };
+
+  if (!body.name?.trim() || !body.email?.trim() || !body.service?.trim() || !body.description?.trim()) {
+    res.status(400).json({ error: "name, email, service, and description are required" });
+    return;
+  }
+
+  const WEBHOOK_URL = "https://hook.eu2.make.com/8rv96172o619qcwsf9adwu7vunl4ysip";
+
+  req.log.info({ service: body.service }, "AI Service inquiry submitted");
+  console.log(`[AiService] forwarding inquiry to Make.com service=${body.service} name=${body.name}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
+  try {
+    const webhookRes = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    const responseText = await webhookRes.text();
+    console.log(`[AiService] Make.com status=${webhookRes.status} body=${responseText.slice(0, 300)}`);
+
+    let data: unknown;
+    try { data = JSON.parse(responseText); } catch { data = { raw: responseText }; }
+
+    if (!webhookRes.ok) {
+      const errData = data as Record<string, unknown>;
+      const errMsg = ((errData.message ?? errData.error ?? responseText) as string).toString().slice(0, 200);
+      res.status(502).json({ error: `Webhook error: ${errMsg}` });
+      return;
+    }
+
+    res.json(data);
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[AiService] ERROR: ${msg}`);
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Webhook timed out — Make.com took longer than 120 seconds" });
+    } else {
+      res.status(502).json({ error: `Webhook request failed: ${msg}` });
+    }
+  }
+});
+
 /* ── LinkedIn Management — n8n multi-agent content pipeline ── */
 router.post("/agents/linkedin-management/trigger", requireAuth, async (req, res): Promise<void> => {
   const body = req.body as { topic?: string; category?: string; audience?: string };

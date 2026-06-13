@@ -301,6 +301,77 @@ const agents = [
     ],
     order: 8,
   },
+  {
+    slug: "ai-service",
+    name: "AI Service Inquiry Agent",
+    shortDescription: "AI-powered service inquiry agent that evaluates client projects, matches them with the right AI solutions, and auto-generates professional documents including proposals, NDAs, invoices, and data processing agreements.",
+    description:
+      "The AI Service Inquiry Agent is a lead evaluation and document generation system powered by OpenAI o4-mini and Make.com. When a client submits a service inquiry, the agent assesses whether the agency can deliver on the project, logs the inquiry to Google Sheets, and — if the answer is yes — automatically generates a complete set of professional documents (Proposal, NDA, Invoice, DPA) in Google Drive and sends them via email.\n\nIf the project falls outside current service capabilities, the agent dispatches a professional rejection email with relevant context. Every inquiry is tracked and evaluated consistently, eliminating manual screening and proposal drafting overhead.",
+    howItWorks:
+      "1. The client fills out the service inquiry form with their name, email, service interest, project description, budget, and timeline.\n2. The backend forwards the inquiry as a JSON payload to the Make.com webhook.\n3. OpenAI o4-mini evaluates the inquiry against the agency's service capabilities and determines if the agency can help.\n4. The inquiry and evaluation result are logged to a Google Sheets tracking sheet.\n5. If the AI determines the agency can help: four professional documents (Proposal, NDA, Invoice, DPA) are auto-generated in Google Drive and emailed to the client.\n6. If the AI determines the agency cannot help: a polite rejection email is sent explaining the reasoning.\n7. The evaluation result (can_help, matched_service, reason) is returned to the frontend for immediate display.",
+    requirements:
+      "Make.com Webhook Integration, OpenAI o4-mini Access, Google Sheets Logging, Google Drive Integration, Gmail Automation, Proposal Template Library, NDA Template, Invoice Generation Engine, DPA Template, Service Classification Framework",
+    expectedOutput:
+      "• AI evaluation of project fit (YES / NO decision)\n• Matched service category identified from intake form\n• Google Sheets row logged with inquiry details and decision\n• If YES: Proposal generated in Google Drive\n• If YES: NDA generated and attached\n• If YES: Commercial Invoice created\n• If YES: Data Processing Agreement (DPA) drafted\n• If YES: All documents emailed to the client\n• If NO: Professional rejection email with reasoning sent to client\n• Frontend receives evaluation result with can_help, matched_service, and reason fields",
+    sampleExamples: [
+      {
+        title: "Qualified Inquiry — Proposal Generated",
+        input: JSON.stringify({
+          name: "Sarah Chen",
+          email: "sarah@techcorp.com",
+          service: "Machine Learning",
+          description: "We need a customer churn prediction model trained on our CRM data. We have 3 years of transaction history.",
+          budget: "$25,000 - $50,000",
+          timeline: "3-6 months",
+        }, null, 2),
+        output: JSON.stringify({
+          can_help: "YES",
+          matched_service: "Machine Learning",
+          reason: "Customer churn prediction is a well-suited ML use case. CRM data with 3 years of history provides sufficient signal.",
+          documents_generated: ["Proposal", "NDA", "Invoice", "DPA"],
+          email_sent: true,
+        }, null, 2),
+      },
+      {
+        title: "Out-of-Scope Inquiry — Rejection Email",
+        input: JSON.stringify({
+          name: "Mark Davies",
+          email: "mark@company.co",
+          service: "Custom Solution",
+          description: "We need a hardware IoT sensor network installed across our factory floor.",
+          budget: "$50,000 - $100,000",
+          timeline: "6-12 months",
+        }, null, 2),
+        output: JSON.stringify({
+          can_help: "NO",
+          reason: "Physical hardware installation and IoT sensor networks fall outside our current AI software service scope.",
+          email_sent: true,
+        }, null, 2),
+      },
+      {
+        title: "Conversational AI Inquiry",
+        input: JSON.stringify({
+          name: "Priya Nair",
+          email: "priya@startup.io",
+          service: "Conversational AI",
+          description: "We need a customer support chatbot for our SaaS platform that handles billing, onboarding, and feature queries.",
+          budget: "$10,000 - $25,000",
+          timeline: "1-3 months",
+        }, null, 2),
+        output: JSON.stringify({
+          can_help: "YES",
+          matched_service: "Conversational AI",
+          reason: "SaaS customer support chatbots are a core service offering. Scope is well-defined and budget is aligned.",
+          documents_generated: ["Proposal", "NDA", "Invoice", "DPA"],
+          email_sent: true,
+        }, null, 2),
+      },
+    ],
+    displayId: "AI-SVC-001",
+    tagline: "Evaluates client service inquiries using AI, logs them to Google Sheets, and auto-generates proposals, NDAs, invoices, and DPAs for qualified projects.",
+    webhookUrl: "https://hook.eu2.make.com/8rv96172o619qcwsf9adwu7vunl4ysip",
+    order: 9,
+  },
 ];
 
 async function seed() {

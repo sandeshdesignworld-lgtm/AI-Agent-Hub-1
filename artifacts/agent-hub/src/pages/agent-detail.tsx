@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 import { LinkedInManagementPage } from "./linkedin-management-page";
 import { BusinessDocumentationPage } from "./business-documentation-page";
+import { AiServiceInquiryPage } from "./ai-service-inquiry-page";
 
 
 /* ── Expense Tracker constants ── */
@@ -728,6 +729,7 @@ export default function AgentDetail() {
   const isCampusConcierge = slug === "campus-concierge";
   const isLinkedInManagement = slug === "linkedin-management";
   const isBusinessDocumentation = slug === "appointment-booking";
+  const isAiService = slug === "ai-service";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -984,6 +986,10 @@ export default function AgentDetail() {
         <BusinessDocumentationPage />
       </div>
     );
+  }
+
+  if (isAiService) {
+    return <AiServiceInquiryPage />;
   }
 
   return (
