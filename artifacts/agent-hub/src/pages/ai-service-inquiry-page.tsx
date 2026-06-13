@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  Send, CheckCircle2, Loader2, RotateCcw, AlertTriangle,
+  Send, CheckCircle2, Loader2, RotateCcw,
 } from "lucide-react";
 
 const SERVICES = [
@@ -119,12 +119,6 @@ export function AiServiceInquiryPage() {
     setTouched({});
   }
 
-  const canHelp = result
-    ? (result.raw != null || result?.can_help?.toString().toUpperCase() === "YES")
-    : false;
-  const matchedService = result?.matched_service ?? service;
-  const reason = result?.reason;
-  const makeResponse = result?.raw;
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,26 +158,13 @@ export function AiServiceInquiryPage() {
                   exit={{ opacity: 0 }}
                   className="space-y-5"
                 >
-                  <div className={cn(
-                    "rounded-xl border p-6 text-center space-y-3",
-                    canHelp
-                      ? "border-green-500/30 bg-green-500/5"
-                      : "border-amber-500/30 bg-amber-500/5"
-                  )}>
-                    {canHelp
-                      ? <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto" />
-                      : <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
-                    }
-                    <p className={cn("font-semibold text-base", canHelp ? "text-green-300" : "text-amber-300")}>
-                      {canHelp ? "Great news!" : "Thank you for your interest!"}
+                  <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-6 text-center space-y-3">
+                    <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto" />
+                    <p className="font-semibold text-base text-green-300">
+                      Inquiry Submitted Successfully!
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-                      {makeResponse
-                        ? makeResponse
-                        : canHelp
-                          ? `Thank you! We've received your inquiry for ${matchedService}. Our team is preparing your project documents and will reach out shortly.`
-                          : `Thank you for your interest! Unfortunately, ${reason ?? "this project falls outside our current service scope"}. We'll keep your details on file for future opportunities.`
-                      }
+                      Thank you! Our AI is evaluating your project and matching the right solution. You'll receive an email shortly with your proposal, NDA, invoice, and DPA.
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={reset} className="gap-2 border-primary/20 hover:text-primary text-xs w-full">
