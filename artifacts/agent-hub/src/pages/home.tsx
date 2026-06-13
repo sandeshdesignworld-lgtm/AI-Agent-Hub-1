@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
-  Zap, Shield, ArrowRight, BookOpen, Users, Calendar,
+  Zap, Shield, ArrowRight, BookOpen, Users, Calendar, FileText,
   MessageSquare, GraduationCap, Mic, Network, DollarSign,
   Clock, LayoutDashboard, ChevronRight, Lock, ExternalLink
 } from "lucide-react";
@@ -41,7 +41,7 @@ const AGENT_META: Record<string, {
     category: "Operations",
     status: "Details Available",
     tags: ["Document Automation", "Contract Generation", "Business Operations"],
-    icon: <Calendar className="w-5 h-5" />,
+    icon: <FileText className="w-5 h-5" />,
   },
   "customer-support": {
     category: "Support",
