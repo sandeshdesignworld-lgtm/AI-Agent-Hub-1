@@ -973,8 +973,18 @@ export default function AgentDetail() {
     );
   }
 
-
-
+  if (isAiService) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <Link href="/">
+          <Button variant="ghost" className="mb-8 pl-0 hover:bg-transparent hover:text-primary gap-2 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to Registry
+          </Button>
+        </Link>
+        <BusinessDocumentationPage />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
@@ -1005,7 +1015,6 @@ export default function AgentDetail() {
           <div className="lg:col-span-2 space-y-8">
             {isCampusConcierge && <CampusConciergePanel />}
             {isCampusConcierge && <CampusConciergeCallLog />}
-            {isAiService && <BusinessDocumentationPage />}
 
             <section className="bg-card/40 border border-border/50 rounded-xl p-6 backdrop-blur-sm">
               <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
