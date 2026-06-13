@@ -16,7 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 import { LinkedInManagementPage } from "./linkedin-management-page";
-import { BusinessDocumentationPage } from "./business-documentation-page";
+import { AiServiceInquiryPage } from "./ai-service-inquiry-page";
 
 
 /* ── Expense Tracker constants ── */
@@ -974,16 +974,7 @@ export default function AgentDetail() {
   }
 
   if (isAiService) {
-    return (
-      <div className="container mx-auto px-4 py-12 max-w-5xl">
-        <Link href="/">
-          <Button variant="ghost" className="mb-8 pl-0 hover:bg-transparent hover:text-primary gap-2 text-muted-foreground">
-            <ArrowLeft className="w-4 h-4" /> Back to Registry
-          </Button>
-        </Link>
-        <BusinessDocumentationPage />
-      </div>
-    );
+    return <AiServiceInquiryPage />;
   }
 
   return (
