@@ -1074,7 +1074,13 @@ export default function AgentDetail() {
               </ul>
 
               <div className="pt-6 border-t border-border/50">
-                {isAdmin && hasWebhook ? (
+                {!isAdmin ? (
+                  <Link href="/admin/login">
+                    <Button className="w-full shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow">
+                      Initialize Agent
+                    </Button>
+                  </Link>
+                ) : hasWebhook ? (
                   <Button
                     className="w-full shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow gap-2"
                     onClick={() => setPanelOpen(v => !v)}
@@ -1085,11 +1091,14 @@ export default function AgentDetail() {
                     <ChevronDown className={cn("w-4 h-4 ml-auto transition-transform", panelOpen && "rotate-180")} />
                   </Button>
                 ) : (
-                  <Link href="/admin/login">
-                    <Button className="w-full shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow">
-                      Initialize Agent
-                    </Button>
-                  </Link>
+                  <Button
+                    className="w-full gap-2"
+                    disabled
+                    variant="outline"
+                  >
+                    <Zap className="w-4 h-4" />
+                    No Webhook Configured
+                  </Button>
                 )}
                 <p className="text-xs text-center text-muted-foreground mt-3 font-mono">
                   {isAdmin ? "Admin access active" : "Requires admin clearance"}
