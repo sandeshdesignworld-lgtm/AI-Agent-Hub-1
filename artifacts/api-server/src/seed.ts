@@ -138,6 +138,7 @@ const agents = [
       "The Help Desk Agent generates:\n• Automated customer email responses\n• Billing and refund assistance\n• Product support acknowledgments\n• General inquiry responses\n• Customer issue classification\n• Knowledge-based support answers\n• Professional email communications\n• Support request routing\n• AI-generated customer assistance\n• Consistent brand-aligned responses",
     displayId: "CS-CARE-001",
     tagline: "Automatically understands customer inquiries, routes them intelligently, and delivers professional support responses in real time.",
+    webhookUrl: "https://n8n.srv1042888.hstgr.cloud/webhook/help-desk",
     sampleExamples: [
       {
         title: "Billing Inquiry",
