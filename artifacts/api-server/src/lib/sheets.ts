@@ -1,4 +1,5 @@
 import { google, type sheets_v4 } from "googleapis";
+import { createPrivateKey } from "node:crypto";
 
 /**
  * Thin Google Sheets API wrapper backed by a service account.
@@ -11,7 +12,7 @@ import { google, type sheets_v4 } from "googleapis";
 
 let cachedClient: sheets_v4.Sheets | null = null;
 
-function getClient(): sheets_v4.Sheets {
+async function getClient(): Promise<sheets_v4.Sheets> {
   if (cachedClient) return cachedClient;
 
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -23,14 +24,41 @@ function getClient(): sheets_v4.Sheets {
     );
   }
 
-  const auth = new google.auth.JWT({
-    email,
-    // Private keys stored in env come with literal "\n" sequences — restore them.
-    key: rawKey.replace(/\\n/g, "\n"),
+  // --- Key normalization ---
+  // 1. Strip surrounding quotes (in case the user pasted the value with them)
+  let privateKey = rawKey.trim();
+  if (
+    (privateKey.startsWith('"') && privateKey.endsWith('"')) ||
+    (privateKey.startsWith("'") && privateKey.endsWith("'"))
+  ) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  // 2. Replace literal "\n" sequences with real newlines
+  if (privateKey.includes("\\n")) {
+    privateKey = privateKey.replace(/\\n/g, "\n");
+  }
+  // 3. Re-export through Node.js crypto to normalise OpenSSL 3 key format.
+  //    This reliably produces a clean PKCS#8 PEM that googleapis accepts.
+  try {
+    const keyObj = createPrivateKey({ key: privateKey, format: "pem" });
+    privateKey = keyObj.export({ type: "pkcs8", format: "pem" }) as string;
+  } catch (e) {
+    throw new Error(
+      `Failed to parse GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      type: "service_account",
+      client_email: email,
+      private_key: privateKey,
+    },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
-  cachedClient = google.sheets({ version: "v4", auth });
+  const client = await auth.getClient();
+  cachedClient = google.sheets({ version: "v4", auth: client as never });
   return cachedClient;
 }
 
@@ -51,7 +79,7 @@ function columnToIndex(column: string): number {
 
 /** Read every row from a tab. Returns [] when the tab is empty. */
 export async function getRows(sheetTab: string): Promise<string[][]> {
-  const sheets = getClient();
+  const sheets = await getClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: getSpreadsheetId(),
     range: sheetTab,
@@ -61,7 +89,7 @@ export async function getRows(sheetTab: string): Promise<string[][]> {
 
 /** Append a single row to the end of a tab. */
 export async function appendRow(sheetTab: string, values: unknown[]): Promise<void> {
-  const sheets = getClient();
+  const sheets = await getClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: getSpreadsheetId(),
     range: sheetTab,
@@ -84,7 +112,7 @@ export async function updateCell(
   newValue: string,
 ): Promise<void> {
   const rowNumber = await findRowNumber(sheetTab, matchColumn, matchValue);
-  const sheets = getClient();
+  const sheets = await getClient();
   await sheets.spreadsheets.values.update({
     spreadsheetId: getSpreadsheetId(),
     range: `${sheetTab}!${column}${rowNumber}`,
@@ -104,7 +132,7 @@ export async function updateMultipleCells(
   updates: Record<string, string>,
 ): Promise<void> {
   const rowNumber = await findRowNumber(sheetTab, matchColumn, matchValue);
-  const sheets = getClient();
+  const sheets = await getClient();
   const data = Object.entries(updates).map(([column, value]) => ({
     range: `${sheetTab}!${column}${rowNumber}`,
     values: [[value]],
