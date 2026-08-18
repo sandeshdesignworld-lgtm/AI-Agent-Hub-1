@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { HospitalReceptionistPage } from "./hospital-receptionist-page";
 import { LinkedInManagementPage } from "./linkedin-management-page";
 import { AiServiceInquiryPage } from "./ai-service-inquiry-page";
+import { OnboardingAgentPage } from "./onboarding-agent-page";
 
 
 /* ── Expense Tracker constants ── */
@@ -728,6 +729,7 @@ export default function AgentDetail() {
   const isCampusConcierge = slug === "campus-concierge";
   const isLinkedInManagement = slug === "linkedin-management";
   const isAiService = slug === "ai-service";
+  const isOnboardingAgent = slug === "onboarding-agent";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -969,6 +971,19 @@ export default function AgentDetail() {
           </Button>
         </Link>
         <LinkedInManagementPage />
+      </div>
+    );
+  }
+
+  if (isOnboardingAgent) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-6xl">
+        <Link href="/">
+          <Button variant="ghost" className="mb-8 pl-0 hover:bg-transparent hover:text-primary gap-2 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back to Registry
+          </Button>
+        </Link>
+        <OnboardingAgentPage />
       </div>
     );
   }

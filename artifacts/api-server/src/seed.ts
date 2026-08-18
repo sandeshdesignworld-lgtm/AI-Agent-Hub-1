@@ -299,6 +299,36 @@ const agents = [
     webhookUrl: "https://hook.eu2.make.com/8rv96172o619qcwsf9adwu7vunl4ysip",
     order: 9,
   },
+  {
+    slug: "onboarding-agent",
+    name: "IDBI Onboarding Agent",
+    shortDescription: "Manages post-selection onboarding — document intake, verification, medical scheduling, training, and branch allocation — with a live dashboard connected to Google Sheets and n8n automation.",
+    description: "The IDBI Onboarding Agent provides HR with an interactive dashboard to manage the complete post-selection onboarding pipeline. Instead of manually editing spreadsheet cells to drive stage transitions, HR uses the dashboard to add candidates, review document checklists with visual status indicators, approve documents, schedule medical examinations, record medical outcomes, and allocate branches — all through clean forms and buttons. Behind the scenes, the dashboard reads from and writes to the same Google Sheet that three n8n workflows (WF-1: Offer Dispatch, WF-2: Document Intake, WF-3: Stage Progression) monitor. The UI handles the human decisions; n8n handles the automation (emails, document classification, stage advancement).",
+    howItWorks: "1. HR adds a new candidate via the dashboard form (name, email, DOB, position). The UI writes the row to the Google Sheet's Candidates tab.\n2. WF-1 (n8n) detects the new row, creates a Drive folder, seeds the document checklist, and emails the candidate with required documents.\n3. Candidates reply by email with document attachments. WF-2 (n8n) picks up emails, classifies documents using AI, extracts name/DOB, compares against records, and updates the Checklist tab with verdicts (OK, NameMismatch, DOBMismatch).\n4. HR reviews the document checklist in the dashboard — green cards for received/OK, amber for flagged with issue details, grey for pending.\n5. When all documents are clear, HR clicks 'Approve & Schedule Medical', fills in date/time/hospital. The UI writes these values to the sheet.\n6. WF-3 (n8n) detects the approval, sends the medical appointment email, and advances the stage.\n7. HR records the medical outcome (Fit/Unfit) via the dashboard.\n8. WF-3 sends training materials and advances to Training stage.\n9. HR allocates a branch via the dashboard form (branch name, POC, contact).\n10. WF-3 sends the final reporting letter with branch details and marks the candidate as Completed.",
+    requirements: "Google Sheet (IDBI Onboarding) with Candidates, Checklist, Documents, and DocRules tabs. Google Service Account with edit access. Three n8n workflows: WF-1 (Offer Dispatch), WF-2 (Document Intake & Classification), WF-3 (Stage Progression).",
+    expectedOutput: "• Live candidate pipeline dashboard with stage-wise counts\n• Visual document checklist with color-coded status (OK/Flagged/Pending)\n• One-click stage transitions replacing manual cell edits\n• Auto-generated RefCode for new candidates\n• Medical scheduling form with date/time/hospital\n• Branch allocation form with POC details\n• Real-time sync with Google Sheets — n8n workflows pick up changes automatically",
+    sampleExamples: [
+      {
+        title: "Add New Candidate",
+        input: "Name: Arjun Nair, Email: arjun.n@gmail.com, DOB: 15/03/1998, Position: PO",
+        output: "Candidate added with RefCode IDBI/JAM/2026/00427. Row written to Candidates sheet. WF-1 will create Drive folder and send appointment letter on next cycle.",
+      },
+      {
+        title: "Document Review & Approval",
+        input: "HR reviews checklist for IDBI/JAM/2026/00427: 5/7 docs received, 1 flagged (Class 12 marksheet — name mismatch), 1 pending.",
+        output: "Dashboard shows color-coded checklist grid. Flagged document displays issue: 'Name reads A. Nair but application declared Arjun Nair'. HR can view the document, override if acceptable, and approve when ready.",
+      },
+      {
+        title: "Stage Progression — Medical",
+        input: "HR clicks 'Approve & Schedule Medical'. Fills: Date: 25/08/2026, Time: 10:00 AM, Hospital: Apollo Hospital, Andheri West, Mumbai.",
+        output: "Sheet updated: DocCheckApproval=Approved, MedicalDate=25/08/2026, MedicalTime=10:00 AM, MedicalAddress=Apollo Hospital. WF-3 detects on next poll, sends medical email to candidate, advances stage to MedicalPending.",
+      },
+    ],
+    displayId: "HR-ONB-001",
+    tagline: "Manages post-selection onboarding with a live dashboard — document intake, verification, medical scheduling, and branch allocation.",
+    webhookUrl: "",
+    order: 10,
+  },
 ];
 
 export async function seed() {

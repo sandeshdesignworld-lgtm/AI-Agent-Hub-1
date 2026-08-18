@@ -1,0 +1,132 @@
+import { google, type sheets_v4 } from "googleapis";
+
+/**
+ * Thin Google Sheets API wrapper backed by a service account.
+ *
+ * Required environment variables:
+ *   - GOOGLE_SERVICE_ACCOUNT_EMAIL
+ *   - GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY  (private key from the JSON, \n-escaped)
+ *   - ONBOARDING_SHEET_ID                 (spreadsheet id from the sheet URL)
+ */
+
+let cachedClient: sheets_v4.Sheets | null = null;
+
+function getClient(): sheets_v4.Sheets {
+  if (cachedClient) return cachedClient;
+
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+  if (!email || !rawKey) {
+    throw new Error(
+      "Google service account credentials are not configured (GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY)",
+    );
+  }
+
+  const auth = new google.auth.JWT({
+    email,
+    // Private keys stored in env come with literal "\n" sequences — restore them.
+    key: rawKey.replace(/\\n/g, "\n"),
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  cachedClient = google.sheets({ version: "v4", auth });
+  return cachedClient;
+}
+
+function getSpreadsheetId(): string {
+  const id = process.env.ONBOARDING_SHEET_ID;
+  if (!id) throw new Error("ONBOARDING_SHEET_ID environment variable is not set");
+  return id;
+}
+
+/** Convert a spreadsheet column letter (e.g. "A", "AA") to a 0-based index. */
+function columnToIndex(column: string): number {
+  let index = 0;
+  for (const char of column.toUpperCase()) {
+    index = index * 26 + (char.charCodeAt(0) - 64);
+  }
+  return index - 1;
+}
+
+/** Read every row from a tab. Returns [] when the tab is empty. */
+export async function getRows(sheetTab: string): Promise<string[][]> {
+  const sheets = getClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: sheetTab,
+  });
+  return (res.data.values as string[][] | undefined) ?? [];
+}
+
+/** Append a single row to the end of a tab. */
+export async function appendRow(sheetTab: string, values: unknown[]): Promise<void> {
+  const sheets = getClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: getSpreadsheetId(),
+    range: sheetTab,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [values] },
+  });
+}
+
+/**
+ * Find the first row where `matchColumn` equals `matchValue` and write
+ * `newValue` into `column` on that same row.
+ * Both `column` and `matchColumn` are column letters (e.g. "A", "I").
+ */
+export async function updateCell(
+  sheetTab: string,
+  column: string,
+  matchColumn: string,
+  matchValue: string,
+  newValue: string,
+): Promise<void> {
+  const rowNumber = await findRowNumber(sheetTab, matchColumn, matchValue);
+  const sheets = getClient();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: getSpreadsheetId(),
+    range: `${sheetTab}!${column}${rowNumber}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[newValue]] },
+  });
+}
+
+/**
+ * Find the first row where `matchColumn` equals `matchValue` and write several
+ * cells on that row in a single batch. `updates` is keyed by column letter.
+ */
+export async function updateMultipleCells(
+  sheetTab: string,
+  matchColumn: string,
+  matchValue: string,
+  updates: Record<string, string>,
+): Promise<void> {
+  const rowNumber = await findRowNumber(sheetTab, matchColumn, matchValue);
+  const sheets = getClient();
+  const data = Object.entries(updates).map(([column, value]) => ({
+    range: `${sheetTab}!${column}${rowNumber}`,
+    values: [[value]],
+  }));
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: getSpreadsheetId(),
+    requestBody: { valueInputOption: "USER_ENTERED", data },
+  });
+}
+
+/** Resolve the 1-based sheet row number for a match, or throw if not found. */
+async function findRowNumber(
+  sheetTab: string,
+  matchColumn: string,
+  matchValue: string,
+): Promise<number> {
+  const rows = await getRows(sheetTab);
+  const matchIndex = columnToIndex(matchColumn);
+  const rowIdx = rows.findIndex((row) => (row[matchIndex] ?? "") === matchValue);
+  if (rowIdx === -1) {
+    throw new Error(`No row in "${sheetTab}" where column ${matchColumn} = "${matchValue}"`);
+  }
+  // Sheets rows are 1-based.
+  return rowIdx + 1;
+}

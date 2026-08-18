@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Zap, Shield, ArrowRight, BookOpen, Users, Calendar, FileText,
   MessageSquare, GraduationCap, Mic, Network, DollarSign,
-  Clock, LayoutDashboard, ChevronRight, Lock, ExternalLink
+  Clock, LayoutDashboard, ChevronRight, Lock, ExternalLink, ClipboardList
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -66,6 +66,12 @@ const AGENT_META: Record<string, {
     status: "Details Available",
     tags: ["Document Automation", "Contract Generation", "Business Operations"],
     icon: <FileText className="w-5 h-5" />,
+  },
+  "onboarding-agent": {
+    category: "HR",
+    status: "Details Available",
+    tags: ["Employee Onboarding", "Document Verification", "Stage Automation"],
+    icon: <ClipboardList className="w-5 h-5" />,
   },
 };
 
