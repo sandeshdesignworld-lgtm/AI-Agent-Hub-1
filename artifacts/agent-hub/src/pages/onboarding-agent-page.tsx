@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
   Users, ClipboardList, FileCheck2, CheckCircle2, AlertTriangle, Clock,
   Loader2, Plus, ArrowLeft, ChevronRight, Mail, Calendar, MapPin,
   Stethoscope, Building2, FileText, ShieldCheck, HeartPulse, GraduationCap,
-  Bell, ExternalLink, Eye, Briefcase, RefreshCw,
+  Bell, ExternalLink, Eye, Briefcase, RefreshCw, Trash2, Sun, Moon,
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════
@@ -56,20 +56,76 @@ interface ChecklistItem {
 }
 
 /* ══════════════════════════════════════════════════════
+   Theme (scoped to this dashboard only — see .light-mode in index.css)
+══════════════════════════════════════════════════════ */
+type DashTheme = "dark" | "light";
+const THEME_STORAGE_KEY = "onboarding-dashboard-theme";
+
+const ThemeContext = createContext<DashTheme>("dark");
+
+/** True when the dashboard is rendering in light mode. */
+function useLight(): boolean {
+  return useContext(ThemeContext) === "light";
+}
+
+/** Dashboard theme state, persisted to localStorage (defaults to dark). */
+function useDashTheme() {
+  const [theme, setTheme] = useState<DashTheme>(() => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
+    } catch {
+      return "dark";
+    }
+  });
+
+  const toggle = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  return { theme, toggle };
+}
+
+function ThemeToggle({ theme, onToggle }: { theme: DashTheme; onToggle: () => void }) {
+  const light = theme === "light";
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
+      title={light ? "Switch to dark mode" : "Switch to light mode"}
+      className={cn(
+        "w-9 h-9 rounded-lg border flex items-center justify-center transition-colors flex-shrink-0",
+        light
+          ? "border-gray-200 bg-white text-gray-600 hover:text-primary hover:border-primary/40"
+          : "border-border/50 bg-card/40 text-muted-foreground hover:text-primary hover:border-primary/40",
+      )}
+    >
+      {light ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+    </button>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
    Stage configuration
 ══════════════════════════════════════════════════════ */
 type StageKey =
   | "OfferSent" | "AwaitingDocs" | "DocsUnderCheck"
   | "DVBooked" | "MedicalPending" | "Training" | "Completed";
 
-const STAGE_CONFIG: Record<StageKey, {
+interface StageStyle {
   label: string;
   pill: string;
   dot: string;
   soft: string;
   text: string;
   icon: typeof FileText;
-}> = {
+}
+
+/* Same hues in both themes — light mode just deepens the text and softens the fill. */
+const STAGE_CONFIG: Record<StageKey, StageStyle> = {
   OfferSent:      { label: "Offer Sent",       pill: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",   dot: "bg-indigo-400",  soft: "bg-indigo-500/10 border-indigo-500/30",   text: "text-indigo-400",  icon: Mail },
   AwaitingDocs:   { label: "Awaiting Docs",     pill: "bg-blue-500/10 text-blue-400 border-blue-500/30",         dot: "bg-blue-400",    soft: "bg-blue-500/10 border-blue-500/30",       text: "text-blue-400",    icon: ClipboardList },
   DocsUnderCheck: { label: "Docs Under Check",  pill: "bg-amber-500/10 text-amber-400 border-amber-500/30",      dot: "bg-amber-400",   soft: "bg-amber-500/10 border-amber-500/30",     text: "text-amber-400",   icon: FileCheck2 },
@@ -78,6 +134,21 @@ const STAGE_CONFIG: Record<StageKey, {
   Training:       { label: "Training",          pill: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30",          dot: "bg-cyan-400",    soft: "bg-cyan-500/10 border-cyan-500/30",       text: "text-cyan-400",    icon: GraduationCap },
   Completed:      { label: "Completed",         pill: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", dot: "bg-emerald-400", soft: "bg-emerald-500/10 border-emerald-500/30", text: "text-emerald-400", icon: CheckCircle2 },
 };
+
+const STAGE_CONFIG_LIGHT: Record<StageKey, StageStyle> = {
+  OfferSent:      { ...STAGE_CONFIG.OfferSent,      pill: "bg-indigo-500/10 text-indigo-700 border-indigo-500/30",   soft: "bg-indigo-500/5 border-indigo-500/30",   text: "text-indigo-700",  dot: "bg-indigo-500" },
+  AwaitingDocs:   { ...STAGE_CONFIG.AwaitingDocs,   pill: "bg-blue-500/10 text-blue-700 border-blue-500/30",         soft: "bg-blue-500/5 border-blue-500/30",       text: "text-blue-700",    dot: "bg-blue-500" },
+  DocsUnderCheck: { ...STAGE_CONFIG.DocsUnderCheck, pill: "bg-amber-500/10 text-amber-700 border-amber-500/30",      soft: "bg-amber-500/5 border-amber-500/30",     text: "text-amber-700",   dot: "bg-amber-500" },
+  DVBooked:       { ...STAGE_CONFIG.DVBooked,       pill: "bg-green-500/10 text-green-700 border-green-500/30",      soft: "bg-green-500/5 border-green-500/30",     text: "text-green-700",   dot: "bg-green-500" },
+  MedicalPending: { ...STAGE_CONFIG.MedicalPending, pill: "bg-purple-500/10 text-purple-700 border-purple-500/30",   soft: "bg-purple-500/5 border-purple-500/30",   text: "text-purple-700",  dot: "bg-purple-500" },
+  Training:       { ...STAGE_CONFIG.Training,       pill: "bg-cyan-500/10 text-cyan-700 border-cyan-500/30",         soft: "bg-cyan-500/5 border-cyan-500/30",       text: "text-cyan-700",    dot: "bg-cyan-500" },
+  Completed:      { ...STAGE_CONFIG.Completed,      pill: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30", soft: "bg-emerald-500/5 border-emerald-500/30", text: "text-emerald-700", dot: "bg-emerald-500" },
+};
+
+/** Stage styling for the active theme. */
+function stageStyle(stage: StageKey, light: boolean): StageStyle {
+  return light ? STAGE_CONFIG_LIGHT[stage] : STAGE_CONFIG[stage];
+}
 
 const STAGE_ORDER: StageKey[] = [
   "OfferSent", "AwaitingDocs", "DocsUnderCheck",
@@ -131,12 +202,12 @@ async function fetchChecklist(refCode: string): Promise<ChecklistItem[]> {
   return res.json();
 }
 
-async function apiSend(path: string, method: string, body: unknown): Promise<void> {
+async function apiSend(path: string, method: string, body?: unknown): Promise<void> {
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: body === undefined ? {} : { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
     let msg = `Request failed (HTTP ${res.status})`;
@@ -199,6 +270,8 @@ export function OnboardingAgentPage() {
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<"All" | StageKey>("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Candidate | null>(null);
+  const { theme, toggle } = useDashTheme();
 
   /* Candidates — polled every 30s to stay in sync with n8n */
   const {
@@ -239,59 +312,89 @@ export function OnboardingAgentPage() {
     qc.invalidateQueries({ queryKey: ["onboarding-checklist"] });
   }
 
+  /** Drop the candidate from the caches and return to the pipeline. */
+  function handleDeleted(refCode: string) {
+    setSelectedRef(null);
+    qc.removeQueries({ queryKey: ["onboarding-checklist", refCode] });
+    invalidateAll();
+  }
+
   const selected = selectedRef ? list.find((c) => c.RefCode === selectedRef) ?? null : null;
+  const light = theme === "light";
+  const shell = cn(light && "light-mode rounded-2xl p-5 sm:p-6");
 
   /* ── Loading / error states ── */
   if (isLoading) {
-    return <PipelineSkeleton />;
+    return (
+      <div className={shell}>
+        <PipelineSkeleton />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-10 text-center border border-destructive/20 bg-destructive/5 rounded-xl">
-        <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
-        <p className="text-destructive font-mono text-sm mb-1">Failed to load onboarding data.</p>
-        <p className="text-xs text-muted-foreground font-mono mb-4">{(error as Error).message}</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
-          <RefreshCw className="w-3.5 h-3.5" /> Retry
-        </Button>
+      <div className={shell}>
+        <div className="p-10 text-center border border-destructive/20 bg-destructive/5 rounded-xl">
+          <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
+          <p className="text-destructive font-mono text-sm mb-1">Failed to load onboarding data.</p>
+          <p className="text-xs text-muted-foreground font-mono mb-4">{(error as Error).message}</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      <AnimatePresence mode="wait">
-        {selected ? (
-          <CandidateDetail
-            key="detail"
-            candidate={selected}
-            checklist={checklistByRef[selected.RefCode] ?? []}
-            onBack={() => setSelectedRef(null)}
-            onMutated={invalidateAll}
-            toast={toast}
-          />
-        ) : (
-          <PipelineView
-            key="pipeline"
-            candidates={list}
-            checklistByRef={checklistByRef}
-            stageFilter={stageFilter}
-            onStageFilter={setStageFilter}
-            onSelect={setSelectedRef}
-            onAdd={() => setAddOpen(true)}
-            isSyncing={isFetching}
-          />
-        )}
-      </AnimatePresence>
+    <ThemeContext.Provider value={theme}>
+      <div className={shell}>
+        <AnimatePresence mode="wait">
+          {selected ? (
+            <CandidateDetail
+              key="detail"
+              candidate={selected}
+              checklist={checklistByRef[selected.RefCode] ?? []}
+              onBack={() => setSelectedRef(null)}
+              onMutated={invalidateAll}
+              onDelete={() => setPendingDelete(selected)}
+              theme={theme}
+              onToggleTheme={toggle}
+              toast={toast}
+            />
+          ) : (
+            <PipelineView
+              key="pipeline"
+              candidates={list}
+              checklistByRef={checklistByRef}
+              stageFilter={stageFilter}
+              onStageFilter={setStageFilter}
+              onSelect={setSelectedRef}
+              onAdd={() => setAddOpen(true)}
+              onDelete={setPendingDelete}
+              theme={theme}
+              onToggleTheme={toggle}
+              isSyncing={isFetching}
+            />
+          )}
+        </AnimatePresence>
 
-      <AddCandidateDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onAdded={invalidateAll}
-        toast={toast}
-      />
-    </>
+        <AddCandidateDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          onAdded={invalidateAll}
+          toast={toast}
+        />
+
+        <DeleteCandidateDialog
+          candidate={pendingDelete}
+          onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+          onDeleted={handleDeleted}
+          toast={toast}
+        />
+      </div>
+    </ThemeContext.Provider>
   );
 }
 
@@ -299,7 +402,8 @@ export function OnboardingAgentPage() {
    Pipeline view
 ══════════════════════════════════════════════════════ */
 function PipelineView({
-  candidates, checklistByRef, stageFilter, onStageFilter, onSelect, onAdd, isSyncing,
+  candidates, checklistByRef, stageFilter, onStageFilter, onSelect, onAdd, onDelete,
+  theme, onToggleTheme, isSyncing,
 }: {
   candidates: Candidate[];
   checklistByRef: Record<string, ChecklistItem[]>;
@@ -307,8 +411,12 @@ function PipelineView({
   onStageFilter: (s: "All" | StageKey) => void;
   onSelect: (ref: string) => void;
   onAdd: () => void;
+  onDelete: (c: Candidate) => void;
+  theme: DashTheme;
+  onToggleTheme: () => void;
   isSyncing: boolean;
 }) {
+  const light = useLight();
   const withStage = candidates.map((c) => ({ c, stage: normalizeStage(c.CurrentStage) }));
 
   const counts = useMemo(() => {
@@ -358,17 +466,20 @@ function PipelineView({
             </p>
           </div>
         </div>
-        <Button onClick={onAdd} className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow">
-          <Plus className="w-4 h-4" /> Add Candidate
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={onAdd} className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow">
+            <Plus className="w-4 h-4" /> Add Candidate
+          </Button>
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users}       label="Total Candidates" value={total}        tone="text-primary" />
-        <StatCard icon={ClipboardList} label="Awaiting Docs"   value={awaitingDocs} tone="text-blue-400" />
-        <StatCard icon={FileCheck2}  label="Docs Under Check" value={underCheck}   tone="text-amber-400" />
-        <StatCard icon={CheckCircle2} label="Completed"        value={completed}    tone="text-emerald-400" />
+        <StatCard icon={Users}         label="Total Candidates" value={total}        tone="text-primary" />
+        <StatCard icon={ClipboardList} label="Awaiting Docs"    value={awaitingDocs} tone={light ? "text-blue-700" : "text-blue-400"} />
+        <StatCard icon={FileCheck2}    label="Docs Under Check" value={underCheck}   tone={light ? "text-amber-700" : "text-amber-400"} />
+        <StatCard icon={CheckCircle2}  label="Completed"        value={completed}    tone={light ? "text-emerald-700" : "text-emerald-400"} />
       </div>
 
       {/* Pipeline funnel */}
@@ -376,7 +487,7 @@ function PipelineView({
         <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-4">Pipeline</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {STAGE_ORDER.map((stage) => {
-            const cfg = STAGE_CONFIG[stage];
+            const cfg = stageStyle(stage, light);
             const Icon = cfg.icon;
             return (
               <button
@@ -458,16 +569,24 @@ function PipelineView({
         ) : (
           filtered.map(({ c, stage }, idx) => {
             const stats = computeDocStats(checklistByRef[c.RefCode] ?? []);
-            const cfg = STAGE_CONFIG[stage];
+            const cfg = stageStyle(stage, light);
             const pct = stats.total ? Math.round((stats.received / stats.total) * 100) : 0;
             return (
-              <motion.button
+              <motion.div
                 key={c.RefCode}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect(c.RefCode)}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/50 hover:bg-card/60 transition-all text-left group"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelect(c.RefCode);
+                  }
+                }}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/50 hover:bg-card/60 transition-all text-left group cursor-pointer"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-display font-semibold text-sm flex-shrink-0">
                   {initials(c.Name)}
@@ -495,7 +614,7 @@ function PipelineView({
                   <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
                     <span>{stats.received}/{stats.total} docs</span>
                     {stats.flagged > 0 && (
-                      <span className="flex items-center gap-0.5 text-amber-400">
+                      <span className={cn("flex items-center gap-0.5", light ? "text-amber-700" : "text-amber-400")}>
                         <AlertTriangle className="w-3 h-3" /> {stats.flagged}
                       </span>
                     )}
@@ -508,8 +627,12 @@ function PipelineView({
                 <span className={cn("text-[10px] font-mono px-2 py-0.5 rounded-full border font-medium flex-shrink-0", cfg.pill)}>
                   {cfg.label}
                 </span>
+                <DeleteButton
+                  label={`Delete ${c.Name}`}
+                  onClick={(e) => { e.stopPropagation(); onDelete(c); }}
+                />
                 <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-              </motion.button>
+              </motion.div>
             );
           })
         )}
@@ -531,12 +654,39 @@ function StatCard({ icon: Icon, label, value, tone }: { icon: typeof Users; labe
   );
 }
 
+/** Small red ghost trash button — used on pipeline rows and the detail header. */
+function DeleteButton({ label, onClick, size = "sm" }: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+  size?: "sm" | "md";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "flex items-center justify-center rounded-lg text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-colors flex-shrink-0",
+        size === "sm" ? "w-7 h-7" : "w-9 h-9",
+      )}
+    >
+      <Trash2 className={size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4"} />
+    </button>
+  );
+}
+
 function AlertPanel({ icon: Icon, tone, title, count, children }: {
   icon: typeof FileCheck2; tone: "amber" | "blue"; title: string; count: number; children: React.ReactNode;
 }) {
+  const light = useLight();
   const toneCls = tone === "amber"
-    ? "border-amber-500/30 bg-amber-500/5 text-amber-400"
-    : "border-blue-500/30 bg-blue-500/5 text-blue-400";
+    ? light
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
+      : "border-amber-500/30 bg-amber-500/5 text-amber-400"
+    : light
+      ? "border-blue-500/30 bg-blue-500/10 text-blue-700"
+      : "border-blue-500/30 bg-blue-500/5 text-blue-400";
   return (
     <div className={cn("rounded-xl border p-4", toneCls)}>
       <div className="flex items-center gap-2 mb-3">
@@ -582,16 +732,20 @@ function PipelineSkeleton() {
 type ToastFn = ReturnType<typeof useToast>["toast"];
 
 function CandidateDetail({
-  candidate, checklist, onBack, onMutated, toast,
+  candidate, checklist, onBack, onMutated, onDelete, theme, onToggleTheme, toast,
 }: {
   candidate: Candidate;
   checklist: ChecklistItem[];
   onBack: () => void;
   onMutated: () => void;
+  onDelete: () => void;
+  theme: DashTheme;
+  onToggleTheme: () => void;
   toast: ToastFn;
 }) {
+  const light = useLight();
   const stage = normalizeStage(candidate.CurrentStage);
-  const cfg = STAGE_CONFIG[stage];
+  const cfg = stageStyle(stage, light);
   const stageIdx = STAGE_ORDER.indexOf(stage);
 
   const [modal, setModal] = useState<null | "medical" | "result" | "branch">(null);
@@ -652,18 +806,22 @@ function CandidateDetail({
             </div>
           </div>
         </div>
-        {actionButton && (
-          <Button onClick={actionButton.onClick} className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow flex-shrink-0">
-            <actionButton.icon className="w-4 h-4" /> {actionButton.label}
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {actionButton && (
+            <Button onClick={actionButton.onClick} className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow flex-shrink-0">
+              <actionButton.icon className="w-4 h-4" /> {actionButton.label}
+            </Button>
+          )}
+          <DeleteButton label={`Delete ${candidate.Name}`} size="md" onClick={onDelete} />
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
       </div>
 
       {/* Journey stepper */}
       <section className="bg-card/40 border border-border/50 rounded-xl p-6 backdrop-blur-sm overflow-x-auto">
         <div className="flex items-center min-w-[640px]">
           {STAGE_ORDER.map((s, i) => {
-            const sc = STAGE_CONFIG[s];
+            const sc = stageStyle(s, light);
             const done = i < stageIdx;
             const current = i === stageIdx;
             const Icon = sc.icon;
@@ -672,7 +830,10 @@ function CandidateDetail({
                 <div className="flex flex-col items-center gap-2">
                   <div className={cn(
                     "w-9 h-9 rounded-full border flex items-center justify-center transition-colors",
-                    done ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                    done
+                      ? light
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                        : "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
                       : current ? cn(sc.soft, sc.text)
                       : "bg-background/40 border-border/50 text-muted-foreground/40",
                   )}>
@@ -680,7 +841,9 @@ function CandidateDetail({
                   </div>
                   <span className={cn(
                     "text-[9px] font-mono text-center leading-tight w-16",
-                    current ? sc.text : done ? "text-emerald-400/70" : "text-muted-foreground/40",
+                    current ? sc.text
+                      : done ? (light ? "text-emerald-700/80" : "text-emerald-400/70")
+                      : "text-muted-foreground/40",
                   )}>
                     {sc.label}
                   </span>
@@ -714,7 +877,10 @@ function CandidateDetail({
           {/* Contextual info */}
           {(candidate.MedicalDate || candidate.MedicalStatus) && (
             <section className="bg-card/40 border border-purple-500/20 rounded-xl p-5 backdrop-blur-sm">
-              <div className="text-[10px] font-mono text-purple-400/80 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+              <div className={cn(
+                "text-[10px] font-mono uppercase tracking-widest mb-4 flex items-center gap-1.5",
+                light ? "text-purple-700" : "text-purple-400/80",
+              )}>
                 <HeartPulse className="w-3.5 h-3.5" /> Medical
               </div>
               <div className="space-y-3">
@@ -733,7 +899,10 @@ function CandidateDetail({
 
           {candidate.AllocatedBranch && (
             <section className="bg-card/40 border border-emerald-500/20 rounded-xl p-5 backdrop-blur-sm">
-              <div className="text-[10px] font-mono text-emerald-400/80 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+              <div className={cn(
+                "text-[10px] font-mono uppercase tracking-widest mb-4 flex items-center gap-1.5",
+                light ? "text-emerald-700" : "text-emerald-400/80",
+              )}>
                 <Building2 className="w-3.5 h-3.5" /> Branch Allocation
               </div>
               <div className="space-y-3">
@@ -802,17 +971,22 @@ function DetailRow({ icon: Icon, label, value, mono }: { icon: typeof Mail; labe
 }
 
 function DocCard({ doc, folderUrl }: { doc: { type: string; name: string; status: string; verdict: string; issue: string }; folderUrl: string }) {
+  const light = useLight();
   const flagged = doc.status === "Flagged";
   const received = doc.status === "Received";
 
   const cls = flagged
-    ? "border-amber-500/40 bg-amber-500/5"
+    ? light ? "border-amber-500/40 bg-amber-500/10" : "border-amber-500/40 bg-amber-500/5"
     : received
-      ? "border-green-500/40 bg-green-500/5"
+      ? light ? "border-green-500/40 bg-green-500/10" : "border-green-500/40 bg-green-500/5"
       : "border-border/50 bg-background/40";
 
   const Icon = flagged ? AlertTriangle : received ? CheckCircle2 : Clock;
-  const iconCls = flagged ? "text-amber-400" : received ? "text-green-400" : "text-muted-foreground/50";
+  const iconCls = flagged
+    ? light ? "text-amber-700" : "text-amber-400"
+    : received
+      ? light ? "text-green-700" : "text-green-400"
+      : "text-muted-foreground/50";
 
   return (
     <div className={cn("rounded-lg border p-3.5 transition-colors", cls)}>
@@ -830,18 +1004,21 @@ function DocCard({ doc, folderUrl }: { doc: { type: string; name: string; status
       <div className="mt-2 flex items-center gap-2">
         <span className={cn(
           "text-[9px] font-mono px-1.5 py-0.5 rounded-full border",
-          flagged ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
-            : received ? "text-green-400 border-green-500/30 bg-green-500/10"
+          flagged ? cn(light ? "text-amber-700" : "text-amber-400", "border-amber-500/30 bg-amber-500/10")
+            : received ? cn(light ? "text-green-700" : "text-green-400", "border-green-500/30 bg-green-500/10")
             : "text-muted-foreground border-border/50 bg-background/40",
         )}>
           {flagged ? "Flagged" : received ? "Received" : "Pending"}
         </span>
         {received && doc.verdict && doc.verdict !== "OK" && (
-          <span className="text-[9px] font-mono text-amber-400">{doc.verdict}</span>
+          <span className={cn("text-[9px] font-mono", light ? "text-amber-700" : "text-amber-400")}>{doc.verdict}</span>
         )}
       </div>
       {flagged && doc.issue && (
-        <div className="mt-2.5 text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded p-2 leading-relaxed">
+        <div className={cn(
+          "mt-2.5 text-[11px] bg-amber-500/10 border border-amber-500/20 rounded p-2 leading-relaxed",
+          light ? "text-amber-800" : "text-amber-300/90",
+        )}>
           {doc.issue}
         </div>
       )}
@@ -869,6 +1046,7 @@ function AutomationNote() {
 function AddCandidateDialog({ open, onOpenChange, onAdded, toast }: {
   open: boolean; onOpenChange: (o: boolean) => void; onAdded: () => void; toast: ToastFn;
 }) {
+  const light = useLight();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
@@ -899,7 +1077,7 @@ function AddCandidateDialog({ open, onOpenChange, onAdded, toast }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!mutation.isPending) { onOpenChange(o); if (!o) reset(); } }}>
-      <DialogContent className="bg-card border-border/60">
+      <DialogContent className={cn("bg-card border-border/60", light && "light-mode")}>
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <Plus className="w-4 h-4 text-primary" /> Add Candidate
@@ -939,9 +1117,60 @@ function AddCandidateDialog({ open, onOpenChange, onAdded, toast }: {
   );
 }
 
+function DeleteCandidateDialog({ candidate, onOpenChange, onDeleted, toast }: {
+  candidate: Candidate | null;
+  onOpenChange: (o: boolean) => void;
+  onDeleted: (refCode: string) => void;
+  toast: ToastFn;
+}) {
+  const light = useLight();
+  const refCode = candidate?.RefCode ?? "";
+  const name = candidate?.Name ?? "";
+
+  const mutation = useMutation({
+    mutationFn: () => apiSend(`/candidates/${encodeURIComponent(refCode)}`, "DELETE"),
+    onSuccess: () => {
+      toast({ title: "Candidate deleted", description: `${name} was removed from the Candidates and Checklist sheets.` });
+      onDeleted(refCode);
+      onOpenChange(false);
+    },
+    onError: (e: unknown) => {
+      toast({ title: "Failed to delete candidate", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open={!!candidate} onOpenChange={(o) => { if (!mutation.isPending) onOpenChange(o); }}>
+      <DialogContent className={cn("bg-card border-border/60", light && "light-mode")}>
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Trash2 className="w-4 h-4 text-red-500" /> Delete candidate
+          </DialogTitle>
+          <DialogDescription>
+            Delete {name}? This will remove them from the sheet permanently.
+          </DialogDescription>
+        </DialogHeader>
+        <p className="text-[11px] font-mono text-muted-foreground py-1">{refCode}</p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>Cancel</Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            className="gap-2 bg-red-600 text-white hover:bg-red-700"
+          >
+            {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ScheduleMedicalDialog({ open, onOpenChange, refCode, onDone, toast }: {
   open: boolean; onOpenChange: (o: boolean) => void; refCode: string; onDone: () => void; toast: ToastFn;
 }) {
+  const light = useLight();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
@@ -968,7 +1197,7 @@ function ScheduleMedicalDialog({ open, onOpenChange, refCode, onDone, toast }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!mutation.isPending) { onOpenChange(o); if (!o) reset(); } }}>
-      <DialogContent className="bg-card border-border/60">
+      <DialogContent className={cn("bg-card border-border/60", light && "light-mode")}>
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <Stethoscope className="w-4 h-4 text-primary" /> Approve &amp; Schedule Medical
@@ -1004,6 +1233,7 @@ function ScheduleMedicalDialog({ open, onOpenChange, refCode, onDone, toast }: {
 function MedicalResultDialog({ open, onOpenChange, refCode, onDone, toast }: {
   open: boolean; onOpenChange: (o: boolean) => void; refCode: string; onDone: () => void; toast: ToastFn;
 }) {
+  const light = useLight();
   const [status, setStatus] = useState<"Fit" | "Unfit" | null>(null);
 
   const mutation = useMutation({
@@ -1021,7 +1251,7 @@ function MedicalResultDialog({ open, onOpenChange, refCode, onDone, toast }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!mutation.isPending) { onOpenChange(o); if (!o) setStatus(null); } }}>
-      <DialogContent className="bg-card border-border/60">
+      <DialogContent className={cn("bg-card border-border/60", light && "light-mode")}>
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <HeartPulse className="w-4 h-4 text-primary" /> Record Medical Result
@@ -1036,8 +1266,8 @@ function MedicalResultDialog({ open, onOpenChange, refCode, onDone, toast }: {
               status === "Fit" ? "border-green-500/50 bg-green-500/10" : "border-border/50 bg-background/40 hover:border-green-500/30",
             )}
           >
-            <CheckCircle2 className={cn("w-8 h-8", status === "Fit" ? "text-green-400" : "text-muted-foreground/50")} />
-            <span className={cn("text-sm font-medium", status === "Fit" ? "text-green-400" : "text-muted-foreground")}>Fit</span>
+            <CheckCircle2 className={cn("w-8 h-8", status === "Fit" ? (light ? "text-green-700" : "text-green-400") : "text-muted-foreground/50")} />
+            <span className={cn("text-sm font-medium", status === "Fit" ? (light ? "text-green-700" : "text-green-400") : "text-muted-foreground")}>Fit</span>
           </button>
           <button
             onClick={() => setStatus("Unfit")}
@@ -1046,8 +1276,8 @@ function MedicalResultDialog({ open, onOpenChange, refCode, onDone, toast }: {
               status === "Unfit" ? "border-red-500/50 bg-red-500/10" : "border-border/50 bg-background/40 hover:border-red-500/30",
             )}
           >
-            <AlertTriangle className={cn("w-8 h-8", status === "Unfit" ? "text-red-400" : "text-muted-foreground/50")} />
-            <span className={cn("text-sm font-medium", status === "Unfit" ? "text-red-400" : "text-muted-foreground")}>Unfit</span>
+            <AlertTriangle className={cn("w-8 h-8", status === "Unfit" ? (light ? "text-red-700" : "text-red-400") : "text-muted-foreground/50")} />
+            <span className={cn("text-sm font-medium", status === "Unfit" ? (light ? "text-red-700" : "text-red-400") : "text-muted-foreground")}>Unfit</span>
           </button>
         </div>
         <AutomationNote />
@@ -1066,6 +1296,7 @@ function MedicalResultDialog({ open, onOpenChange, refCode, onDone, toast }: {
 function AllocateBranchDialog({ open, onOpenChange, refCode, onDone, toast }: {
   open: boolean; onOpenChange: (o: boolean) => void; refCode: string; onDone: () => void; toast: ToastFn;
 }) {
+  const light = useLight();
   const [branch, setBranch] = useState("");
   const [poc, setPoc] = useState("");
   const [pocContact, setPocContact] = useState("");
@@ -1092,7 +1323,7 @@ function AllocateBranchDialog({ open, onOpenChange, refCode, onDone, toast }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!mutation.isPending) { onOpenChange(o); if (!o) reset(); } }}>
-      <DialogContent className="bg-card border-border/60">
+      <DialogContent className={cn("bg-card border-border/60", light && "light-mode")}>
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <Building2 className="w-4 h-4 text-primary" /> Allocate Branch

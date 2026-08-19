@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { getRows, appendRow, updateMultipleCells } from "../lib/sheets";
+import { getRows, appendRow, updateMultipleCells, deleteRows } from "../lib/sheets";
 
 const router: IRouter = Router();
 
@@ -212,6 +212,26 @@ router.patch("/onboarding/candidates/:refCode/allocate-branch", async (req, res)
     res.json({ ok: true, refCode });
   } catch (e) {
     console.error("[Onboarding] allocate-branch error:", errMsg(e));
+    res.status(502).json({ error: errMsg(e) });
+  }
+});
+
+/* ── DELETE /onboarding/candidates/:refCode ── */
+router.delete("/onboarding/candidates/:refCode", async (req, res): Promise<void> => {
+  const { refCode } = req.params;
+
+  try {
+    // Candidates: RefCode is column A. Checklist: RefCode is column B.
+    const removed = await deleteRows(CANDIDATES_TAB, "A", refCode);
+    if (removed === 0) {
+      res.status(404).json({ error: `No candidate with RefCode "${refCode}"` });
+      return;
+    }
+    const checklistRemoved = await deleteRows(CHECKLIST_TAB, "B", refCode);
+
+    res.json({ ok: true, refCode, removed, checklistRemoved });
+  } catch (e) {
+    console.error("[Onboarding] delete candidate error:", errMsg(e));
     res.status(502).json({ error: errMsg(e) });
   }
 });

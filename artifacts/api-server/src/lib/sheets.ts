@@ -143,6 +143,57 @@ export async function updateMultipleCells(
   });
 }
 
+/**
+ * Delete every data row where `matchColumn` equals `matchValue`.
+ * The header row is never a candidate — column headers can collide with values
+ * (Checklist column B holds "RefCode" both as a header and as data).
+ * Returns how many rows were removed (0 when nothing matched).
+ */
+export async function deleteRows(
+  sheetTab: string,
+  matchColumn: string,
+  matchValue: string,
+): Promise<number> {
+  const rows = await getRows(sheetTab);
+  const matchIndex = columnToIndex(matchColumn);
+  const targets: number[] = [];
+  rows.forEach((row, i) => {
+    if (i > 0 && (row[matchIndex] ?? "") === matchValue) targets.push(i);
+  });
+  if (targets.length === 0) return 0;
+
+  const sheetId = await getSheetId(sheetTab);
+  const sheets = await getClient();
+  // Delete bottom-up so each removal leaves the earlier indices valid.
+  const requests = targets
+    .sort((a, b) => b - a)
+    .map((index) => ({
+      deleteDimension: {
+        range: { sheetId, dimension: "ROWS", startIndex: index, endIndex: index + 1 },
+      },
+    }));
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: getSpreadsheetId(),
+    requestBody: { requests },
+  });
+  return targets.length;
+}
+
+/** Resolve the numeric sheetId behind a tab title, or throw if the tab is missing. */
+async function getSheetId(sheetTab: string): Promise<number> {
+  const sheets = await getClient();
+  const res = await sheets.spreadsheets.get({
+    spreadsheetId: getSpreadsheetId(),
+    fields: "sheets.properties(sheetId,title)",
+  });
+  const match = res.data.sheets?.find((s) => s.properties?.title === sheetTab);
+  const id = match?.properties?.sheetId;
+  if (id === null || id === undefined) {
+    throw new Error(`No tab named "${sheetTab}" in the spreadsheet`);
+  }
+  return id;
+}
+
 /** Resolve the 1-based sheet row number for a match, or throw if not found. */
 async function findRowNumber(
   sheetTab: string,
