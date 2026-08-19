@@ -10,7 +10,7 @@ import {
   Plus, Trash2, ChevronDown, CheckCircle2, Loader2,
   RotateCcw, Mail, Zap, AlertTriangle, Upload, FileText, X,
   User, Phone, MapPin, GraduationCap, PhoneCall, PhoneOff, PhoneMissed,
-  RefreshCw, ChevronRight
+  RefreshCw, ChevronRight, ExternalLink
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { LinkedInManagementPage } from "./linkedin-management-page";
 import { AiServiceInquiryPage } from "./ai-service-inquiry-page";
 import { OnboardingAgentPage } from "./onboarding-agent-page";
 
+const SINE_INCUBATION_APPLICATION_URL = "https://sine-application-agent.replit.app/";
 
 /* ── Expense Tracker constants ── */
 const EXPENSE_CATEGORIES = [
@@ -730,6 +731,7 @@ export default function AgentDetail() {
   const isLinkedInManagement = slug === "linkedin-management";
   const isAiService = slug === "ai-service";
   const isOnboardingAgent = slug === "onboarding-agent";
+  const isSineIncubationApplication = slug === "sine-incubation-application";
   const isRunning = triggerMutation.isPending || progressStep >= 0 || hrLoading;
   const isDone = isHRAgent
     ? hrResult !== null
@@ -1089,7 +1091,19 @@ export default function AgentDetail() {
               </ul>
 
               <div className="pt-6 border-t border-border/50">
-                {!isAdmin ? (
+                {isSineIncubationApplication ? (
+                  <>
+                    <Button asChild className="w-full shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow gap-2">
+                      <a href={SINE_INCUBATION_APPLICATION_URL}>
+                        <ExternalLink className="w-4 h-4" />
+                        Test SINE Application
+                      </a>
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-3 font-mono">
+                      Opens the SINE application project
+                    </p>
+                  </>
+                ) : !isAdmin ? (
                   <Link href="/admin/login">
                     <Button className="w-full shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.5)] transition-shadow">
                       Initialize Agent
@@ -1115,9 +1129,11 @@ export default function AgentDetail() {
                     No Webhook Configured
                   </Button>
                 )}
-                <p className="text-xs text-center text-muted-foreground mt-3 font-mono">
-                  {isAdmin ? "Admin access active" : "Requires admin clearance"}
-                </p>
+                {!isSineIncubationApplication && (
+                  <p className="text-xs text-center text-muted-foreground mt-3 font-mono">
+                    {isAdmin ? "Admin access active" : "Requires admin clearance"}
+                  </p>
+                )}
               </div>
             </div>
           </div>

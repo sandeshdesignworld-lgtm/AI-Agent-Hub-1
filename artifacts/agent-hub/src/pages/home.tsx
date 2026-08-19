@@ -73,6 +73,12 @@ const AGENT_META: Record<string, {
     tags: ["Employee Onboarding", "Document Verification", "Stage Automation"],
     icon: <ClipboardList className="w-5 h-5" />,
   },
+  "sine-incubation-application": {
+    category: "Multi-Agent / Incubation",
+    status: "Details Available",
+    tags: ["Startup Evaluation", "Expert Panel", "Incubation"],
+    icon: <Shield className="w-5 h-5" />,
+  },
 };
 
 const FILTER_CATEGORIES = [

@@ -329,6 +329,34 @@ const agents = [
     webhookUrl: "",
     order: 10,
   },
+  {
+    slug: "sine-incubation-application",
+    name: "SINE Incubation Application Agent",
+    shortDescription:
+      "A Layer 2 startup-review panel that brings together independent SME, financial, legal, and network perspectives before human committee review.",
+    description:
+      "The SINE Incubation Application Agent is the second layer of SINE's startup-review workflow. It takes a completed core evaluation and adds four independent specialist views before the application reaches a human committee. The panel is designed to provide structured due-diligence material for people to assess; it does not replace qualified technical, legal, financial, or investment advice.",
+    howItWorks:
+      "1. The completed core evaluation and startup application are shared with four specialist reviewers.\n2. SME, Financial, Legal, and Network reviewers assess the startup independently from their respective perspectives.\n3. The four reviews are prepared in parallel so each perspective remains separate while the panel completes efficiently.\n4. The completed panel gives the human committee structured review material for the next stage of consideration.",
+    requirements:
+      "Completed core evaluation or approved Layer 1 review\nStartup application details\nSME, Financial, Legal, and Network specialist perspectives\nHuman committee review",
+    expectedOutput:
+      "• Four independent specialist reviews\n• Specialist scores, verdicts, and headlines\n• Red flags and follow-up questions for founders\n• Specialist-specific findings and confidence signals\n• Structured material for human committee review",
+    sampleExamples: [
+      {
+        title: "Expert Panel Review",
+        input:
+          "A completed startup application and core evaluation are ready for incubation review.",
+        output:
+          "The panel prepares independent SME, Financial, Legal, and Network perspectives. Each review provides a score, verdict, key risks, founder questions, and confidence level for the human committee to consider.",
+      },
+    ],
+    displayId: "SINE-INC-001",
+    tagline:
+      "Four independent specialist perspectives for structured startup due diligence before human incubation review.",
+    webhookUrl: "",
+    order: 11,
+  },
 ];
 
 export async function seed() {
