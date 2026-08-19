@@ -114,12 +114,15 @@ export default function Home() {
   const [, navigate] = useLocation();
   const [activeFilter, setActiveFilter] = useState("All");
 
-  const filteredAgents = agents?.filter((agent) => {
-    if (activeFilter === "All") return true;
-    const meta = AGENT_META[agent.slug];
-    if (!meta) return false;
-    return meta.category.toLowerCase().includes(activeFilter.toLowerCase());
-  });
+  const filteredAgents = agents
+    ?.filter((agent) => {
+      if (activeFilter === "All") return true;
+      const meta = AGENT_META[agent.slug];
+      if (!meta) return false;
+      return meta.category.toLowerCase().includes(activeFilter.toLowerCase());
+    })
+    // Newest first: higher "order" wins, ties broken by the higher id.
+    .sort((a, b) => b.order - a.order || b.id - a.id);
 
   return (
     <div className="flex-1 w-full flex flex-col">
